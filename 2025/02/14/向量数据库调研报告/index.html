@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta><title>向量数据库调研报告 - A-Acorner 信息的一角</title><link rel="manifest" href="/manifest.json"><meta name="application-name" content="A-Acorner 信息的一角"><meta name="msapplication-TileImage" content="/img/favicon.svg"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="A-Acorner 信息的一角"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="description" content="向量数据库调研报告"><meta property="og:type" content="blog"><meta property="og:title" content="向量数据库调研报告"><meta property="og:url" content="http://acorner.ac.cn/2025/02/14/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E8%B0%83%E7%A0%94%E6%8A%A5%E5%91%8A/"><meta property="og:site_name" content="A-Acorner 信息的一角"><meta property="og:description" content="向量数据库调研报告"><meta property="og:locale" content="zh_CN"><meta property="og:image" content="http://acorner.ac.cn/img/og_image.png"><meta property="article:published_time" content="2025-02-14T09:13:11.344Z"><meta property="article:modified_time" content="2025-02-19T13:55:55.716Z"><meta property="article:author" content="ViniJack.SJX"><meta property="article:tag" content="工具"><meta property="article:tag" content="原理"><meta property="article:tag" content="RAG"><meta property="article:tag" content="向量数据库"><meta property="twitter:card" content="summary"><meta property="twitter:image:src" content="http://acorner.ac.cn/img/og_image.png"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"http://acorner.ac.cn/2025/02/14/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E8%B0%83%E7%A0%94%E6%8A%A5%E5%91%8A/"},"headline":"向量数据库调研报告","image":["http://acorner.ac.cn/img/og_image.png"],"datePublished":"2025-02-14T09:13:11.344Z","dateModified":"2025-02-19T13:55:55.716Z","author":{"@type":"Person","name":"ViniJack.SJX"},"publisher":{"@type":"Organization","name":"A-Acorner 信息的一角","logo":{"@type":"ImageObject","url":"http://acorner.ac.cn/img/logo.svg"}},"description":"向量数据库调研报告"}</script><link rel="canonical" href="http://acorner.ac.cn/2025/02/14/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E8%B0%83%E7%A0%94%E6%8A%A5%E5%91%8A/"><link rel="icon" href="/img/favicon.svg"><link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.0.0/css/all.css"><link data-pjax rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/atom-one-light.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600&amp;family=Roboto+Mono"><link data-pjax rel="stylesheet" href="/css/cyberpunk.css"><style>body>.footer,body>.navbar,body>.section{opacity:0}</style><!--!--><!--!--><!--!--><!--!--><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/css/lightgallery.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/css/justifiedGallery.min.css"><!--!--><!--!--><!--!--><style>.pace{-webkit-pointer-events:none;pointer-events:none;-webkit-user-select:none;-moz-user-select:none;user-select:none}.pace-inactive{display:none}.pace .pace-progress{background:#3273dc;position:fixed;z-index:2000;top:0;right:100%;width:100%;height:2px}</style><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><!--!--><!--!--><!-- hexo injector head_end start --><script>
+  (function () {
+      function switchTab() {
+          if (!location.hash) {
+            return;
+          }
+
+          const id = '#' + CSS.escape(location.hash.substring(1));
+          const $tabMenu = document.querySelector(`.tabs a[href="${id}"]`);
+          if (!$tabMenu) {
+            return;
+          }
+
+          const $tabMenuContainer = $tabMenu.parentElement.parentElement;
+          Array.from($tabMenuContainer.children).forEach($menu => $menu.classList.remove('is-active'));
+          Array.from($tabMenuContainer.querySelectorAll('a'))
+              .map($menu => document.getElementById($menu.getAttribute("href").substring(1)))
+              .forEach($content => $content.classList.add('is-hidden'));
+
+          if ($tabMenu) {
+              $tabMenu.parentElement.classList.add('is-active');
+          }
+          const $activeTab = document.querySelector(id);
+          if ($activeTab) {
+              $activeTab.classList.remove('is-hidden');
+          }
+      }
+      switchTab();
+      window.addEventListener('hashchange', switchTab, false);
+  })();
+  </script><!-- hexo injector head_end end --><meta name="generator" content="Hexo 7.3.0"></head><body class="is-3-column"><nav class="navbar navbar-main"><div class="container navbar-container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/"><img src="/img/logo.svg" alt="A-Acorner 信息的一角" height="28"></a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">Home</a><a class="navbar-item" href="/archives">Archives</a><a class="navbar-item" href="/categories">Categories</a><a class="navbar-item" href="/tags">Tags</a><a class="navbar-item" href="/about">About</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/A-Corner/a-corner.github.io"><i class="fab fa-github"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-6-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time dateTime="2025-02-14T09:13:11.344Z" title="14/2/2025 下午5:13:11">2025-02-14</time>发表</span><span class="level-item"><time dateTime="2025-02-19T13:55:55.716Z" title="19/2/2025 下午9:55:55">2025-02-19</time>更新</span><span class="level-item"><a class="link-muted" href="/categories/RAG/">RAG</a><span> / </span><a class="link-muted" href="/categories/%E5%8E%9F%E7%90%86/">原理</a><span> / </span><a class="link-muted" href="/categories/%E5%B7%A5%E5%85%B7/">工具</a><span> / </span><a class="link-muted" href="/categories/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/">向量数据库</a></span><span class="level-item">1 小时读完 (大约9334个字)</span></div></div><h1 class="title is-3 is-size-4-mobile">向量数据库调研报告</h1><div class="content"><h2 id="1-向量数据库概述"><a href="#1-向量数据库概述" class="headerlink" title="1. 向量数据库概述"></a>1. 向量数据库概述</h2><p>近年来，随着人工智能 (AI) 技术的飞速发展，非结构化数据（如文本、图像、音频、视频等）呈爆炸式增长  。如何高效地存储、管理和检索这些数据成为 AI 应用落地的关键挑战之一  。向量数据库应运而生，为解决这一难题提供了有效方案。</p>
+<span id="more"></span>
+<p>向量数据库是一种专门用于存储和查询向量数据的数据库。与传统数据库将数据存储为行和列不同，向量数据库将数据表示为高维向量，并通过计算向量之间的距离或相似度来进行搜索  。这种方法使得向量数据库能够高效地处理非结构化数据，并支持诸如相似性搜索、推荐系统、图像识别等 AI 应用  。</p>
+<h3 id="1-1-向量数据库的优势和劣势"><a href="#1-1-向量数据库的优势和劣势" class="headerlink" title="1.1 向量数据库的优势和劣势"></a>1.1 向量数据库的优势和劣势</h3><p><strong>优势:</strong></p>
+<ul>
+<li><strong>高效的相似性搜索:</strong>  向量数据库擅长在高维空间中查找最近邻，这对推荐系统、图像识别和自然语言处理至关重要。</li>
+<li><strong>可扩展性:</strong>  许多向量数据库旨在处理大规模数据，有些甚至提供用于水平扩展的分布式架构。</li>
+<li><strong>灵活性:</strong>  通过支持各种距离度量和索引算法，向量数据库可以高度适应特定用例。</li>
+</ul>
+<p><strong>劣势:</strong></p>
+<ul>
+<li><strong>复杂性:</strong>  大量的算法选项和配置可能使向量数据库难以设置和维护。</li>
+<li><strong>成本:</strong>  虽然有开源选项，但商业向量数据库可能很昂贵，尤其是对于大规模部署。</li>
+</ul>
+<h3 id="1-2-向量数据库的应用"><a href="#1-2-向量数据库的应用" class="headerlink" title="1.2 向量数据库的应用"></a>1.2 向量数据库的应用</h3><p>向量数据库在各种 AI 应用场景中发挥着关键作用，例如：</p>
+<ul>
+<li><strong>图像和人脸识别:</strong>  向量数据库广泛用于人脸识别系统和图像相似性搜索应用程序。</li>
+<li><strong>推荐系统:</strong>  它们通过有效地找到与用户互动或感兴趣的项目相似的项目来为推荐引擎提供支持。</li>
+<li><strong>自然语言处理 (NLP):</strong>  在 NLP 中，向量数据库用于文档相似性、情感分析和文档聚类等任务。</li>
+<li><strong>异常检测:</strong>  它们可用于检测各个领域的异常情况，例如网络安全或制造业，方法是识别偏离规范的数据点。</li>
+<li><strong>生物医学研究:</strong>  在基因组学和其他生物医学研究中，向量数据库可用于分析和比较高维生物数据。</li>
+<li><strong>电子商务搜索:</strong>  对于电子商务平台，向量数据库通过根据产品功能或用户偏好提供准确和相关的结果来增强搜索功能。</li>
+<li><strong>多媒体内容检索:</strong>  向量数据库在检索类似的多媒体内容（例如查找视觉上相似的图像或视频）方面发挥着关键作用。</li>
+</ul>
+<h3 id="1-3-向量数据库中使用的算法"><a href="#1-3-向量数据库中使用的算法" class="headerlink" title="1.3 向量数据库中使用的算法"></a>1.3 向量数据库中使用的算法</h3><p>向量数据库使用多种算法来实现高效的相似性搜索，包括：</p>
+<ul>
+<li><strong>KD 树:</strong>  一种基于树的数据结构，用于组织 k 维空间中的点。</li>
+<li><strong>球树:</strong>  类似于 KD 树，但对于高维数据更有效。</li>
+<li><strong>局部敏感哈希 (LSH):</strong>  一种哈希技术，可确保将相似的项目哈希到同一个桶中。</li>
+<li><strong>分层导航小世界 (HNSW) 图:</strong>  一种基于图的结构，通过导航小世界属性提供高效的搜索。</li>
+</ul>
+<h1 id="2-各个向量数据库的详细介绍"><a href="#2-各个向量数据库的详细介绍" class="headerlink" title="2. 各个向量数据库的详细介绍"></a>2. 各个向量数据库的详细介绍</h1><p>本报告将调研市面上主流的向量数据库，包括 GitHub 上的开源项目和商业数据库，并从功能、安装方法、开源许可证和优缺点等方面进行详细介绍。</p>
+<h3 id="2-1-Milvus"><a href="#2-1-Milvus" class="headerlink" title="2.1 Milvus"></a>2.1 Milvus</h3><ul>
+<li><strong>简介:</strong> Milvus 是一款由 Zilliz 驱动的开源向量数据库，旨在处理大规模向量数据。它支持 NNS 和 ANNS，并且可以与各种机器学习框架很好地集成。 Milvus 是一款专为生成式 AI 应用构建的开源向量数据库。  使用 pip 安装，执行高速搜索，并扩展到数百亿个向量，同时将性能损失降至最低。</li>
+<li><strong>安装方法:</strong><ul>
+<li>可以使用 pip 安装 Milvus 或从源码构建。</li>
+<li>Milvus Lite 可以通过  <code>pip install pymilvus</code>  命令安装。</li>
+<li>Milvus Standalone 可以使用 Docker 部署，首先下载 Docker Compose YAML 文件：<code>wget https://github.com/milvus-io/milvus/releases/download/v2.3.3/milvus-standalone-docker-compose.yml -O docker-compose.yml</code>，然后使用 Docker Compose 启动 Milvus 容器：<code>sudo docker compose up -d</code>。</li>
+<li>Milvus 分布式版本可以通过 Helm 部署到 Kubernetes 集群。  首先添加 Milvus Helm 仓库：<code>helm repo add milvus https://milvus-io.github.io/milvus-helm/</code>，然后从  <code>milvus-io/milvus-helm</code>  仓库获取最新的 Milvus chart。</li>
+</ul>
+</li>
+<li><strong>开源 License:</strong> Apache 2.0 许可证。</li>
+<li><strong>优点:</strong><ul>
+<li><strong>高效检索:</strong>  支持高维向量（例如近似最近邻检索 - ANN）的快速相似性搜索，结合 FAISS、HNSW 等索引技术。</li>
+<li><strong>良好的可扩展性:</strong>  支持分布式架构，适合处理大规模数据。</li>
+<li><strong>云原生:</strong>  专为云原生环境而设计，支持水平扩展。</li>
+<li><strong>混合索引系统:</strong>  结合了基于树和基于哈希的索引方法，可有效地检索数据。</li>
+<li><strong>向量剪枝和查询过滤:</strong>  支持更复杂的搜索条件。</li>
+<li><strong>动态分配节点:</strong>  可以更轻松地扩展和规划资源，并保证低延迟和高吞吐量。</li>
+<li><strong>基于角色的访问控制 (RBAC):</strong>  提供有效的数据访问管理机制。</li>
+<li><strong>磁盘索引支持:</strong>  允许将索引存储在磁盘上，从而减少内存使用并支持更大的数据集。</li>
+<li><strong>多语言 SDK:</strong>  提供 Python、Java、JavaScript、Go 和 Node.js SDK。</li>
+<li><strong>活跃的社区和行业认可:</strong> Milvus 社区非常活跃，广泛用于工业级大规模数据检索。</li>
+</ul>
+</li>
+<li><strong>缺点:</strong><ul>
+<li><strong>不支持高级数据类型:</strong>  不支持地理空间和日期时间类型。</li>
+<li><strong>没有内置备份系统:</strong>  需要用户自行实现数据备份和恢复机制。</li>
+<li><strong>身份验证功能不一致:</strong>  安全功能的实现可能不够完善。</li>
+<li><strong>需要额外的组件来存储元数据:</strong>  需要 MySQL 或 SQLite 等组件来存储元数据。</li>
+<li><strong>事务支持有限:</strong>  不适用于需要 ACID 属性的应用程序。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-2-Pinecone"><a href="#2-2-Pinecone" class="headerlink" title="2.2 Pinecone"></a>2.2 Pinecone</h3><ul>
+<li><strong>简介:</strong> Pinecone 是一款专为大规模机器学习应用设计的托管向量数据库。它提供了一个简单的 API 用于创建和管理向量索引，能够在数十亿个项目中进行快速准确的相似性搜索。 Pinecone 是一款领先的向量数据库，用于构建具有 AI 知识的应用程序。  它用于为一些最优秀的公司提供 AI 支持。Pinecone 是一个可扩展的数据库，可以处理大量数据。它还提供各种功能，包括语义搜索、向量相似性搜索和机器学习集成。</li>
+<li><strong>安装方法:</strong>  可以通过 pip 安装 Pinecone Python SDK：<code>pip install &quot;pinecone&quot;</code>。</li>
+<li><strong>开源 License:</strong> Pinecone 不是开源的。</li>
+<li><strong>优点:</strong><ul>
+<li><strong>完全托管的服务:</strong>  无需基础设施维护、服务监控或算法故障排除。</li>
+<li><strong>自动扩展:</strong>  可以轻松处理大型数据集。</li>
+<li><strong>高性能:</strong>  针对快速和大规模相似性搜索进行了优化。</li>
+<li><strong>易于使用:</strong>  直观的设置管理，维护最少。</li>
+<li><strong>实时数据摄取:</strong>  支持立即添加和索引新数据，确保数据始终是最新的。</li>
+<li><strong>易于与现有系统集成:</strong>  用户友好的 API 简化了将向量搜索集成到现有机器学习工作流程和数据系统中的过程。</li>
+<li><strong>提供用户友好的 Python SDK:</strong>  使熟悉 Python 生态系统的开发人员和数据科学家可以轻松访问。</li>
+<li><strong>强大的安全功能:</strong>  包括基于角色的访问控制 (RBAC) 和端到端加密，包括传输中和静态加密。</li>
+</ul>
+</li>
+<li><strong>缺点:</strong><ul>
+<li><strong>不是开源的:</strong>  缺乏对系统的控制，并且可能存在供应商锁定。</li>
+<li><strong>成本较高:</strong>  持续使用可能会变得昂贵，尤其是在大规模环境中。</li>
+<li><strong>元数据处理和灵活性方面存在一些限制:</strong>  与 Qdrant 等数据库相比，元数据处理能力较弱。</li>
+<li><strong>可能缺乏某些项目可能需要的高级查询功能:</strong>  虽然 Pinecone 对于相似性搜索非常有效，但它可能不提供某些项目可能需要的高级查询功能。</li>
+<li><strong>学习曲线:</strong>  了解向量嵌入及其用法可能具有挑战性。</li>
+<li><strong>生成高质量的向量通常需要大量资源且具有挑战性:</strong>  需要仔细调整向量化过程和大量计算资源，以确保向量准确地表示数据并满足应用程序要求。</li>
+<li><strong>集成复杂性:</strong>  将 Pinecone 的向量搜索集成到现有系统中可能涉及重大更改。</li>
+<li><strong>针对特定用例进行优化:</strong> Pinecone 通常涉及复杂的过程来调整特定用例的索引参数，例如实时推荐系统。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-3-Weaviate"><a href="#2-3-Weaviate" class="headerlink" title="2.3 Weaviate"></a>2.3 Weaviate</h3><ul>
+<li><strong>简介:</strong> Weaviate 是一款云原生、开源的向量数据库，具有弹性、可扩展性和快速性。该工具可以使用先进的机器学习模型和算法将文本、照片和其他数据转换为可搜索的向量数据库。 Weaviate 是一个以 AI 为中心的向量数据库，旨在简化各级开发人员的 AI 应用程序的开发和扩展。</li>
+<li><strong>安装方法:</strong><ul>
+<li>可以使用 Docker Compose 或手动安装。  推荐使用 Docker Compose 简化安装过程。</li>
+<li>可以使用 Weaviate Cloud (WCD) 托管服务，无需自行维护。 WCD 是创建 Weaviate 新实例的最快方法，并且对用户来说所需的工作量最少。</li>
+<li>可以使用 Docker 和 Kubernetes 运行 Weaviate 实例。</li>
+</ul>
+</li>
+<li><strong>开源 License:</strong> BSD 3-Clause 许可证。</li>
+<li><strong>优点:</strong><ul>
+<li><strong>专注于语义搜索:</strong>  利用 GraphQL 进行强大而灵活的查询。</li>
+<li><strong>模块化:</strong>  提供用于各种数据类型的模块，例如文本和图像，使集成更容易。</li>
+<li><strong>开源:</strong>  可以根据特定需求修改和扩展其功能。</li>
+<li><strong>活跃的社区:</strong>  拥有活跃且不断发展的社区，提供良好的文档和支持。</li>
+<li><strong>快速:</strong>  核心引擎可以在几毫秒内对数百万个对象执行 10-NN 最近邻搜索。</li>
+<li><strong>灵活:</strong> Weaviate 可以在导入时对数据进行矢量化。或者，如果您已经对数据进行了矢量化，则可以改为上传您自己的矢量。</li>
+<li><strong>模块化:</strong>  模块使您可以灵活地根据需要调整 Weaviate。  二十多个模块将您连接到流行的服务和模型中心，例如 OpenAI、Cohere、VoyageAI 和 HuggingFace。使用自定义模块来处理您自己的模型或第三方服务。</li>
+</ul>
+</li>
+<li><strong>缺点:</strong><ul>
+<li><strong>性能:</strong>  对于非常大的数据集或高吞吐量场景，可能会遇到性能较慢的问题。</li>
+<li><strong>成熟度:</strong>  作为一个相对较新的工具，某些功能可能没有得到充分的开发。</li>
+<li><strong>部署复杂性:</strong>  与 Pinecone 等托管解决方案相比，设置 Chroma 并进行大规模管理可能需要更多精力和专业知识。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-4-Qdrant"><a href="#2-4-Qdrant" class="headerlink" title="2.4 Qdrant"></a>2.4 Qdrant</h3><ul>
+<li><strong>简介:</strong> Qdrant 是一个开源的向量相似性搜索引擎和数据库。它提供了一个生产就绪的服务，带有一个易于使用的 API，用于存储、搜索和管理点向量和带有额外有效负载的高维向量。该工具旨在提供广泛的过滤支持。 Qdrant 是一个向量数据库，它使用先进的向量匹配技术来支持下一代 AI 应用程序。  它是一个开源数据库，旨在处理大量数据并提供快速的搜索结果。它可作为基于云的服务以及本地解决方案使用。Qdrant 还有一个 Docker 镜像，可用于在本地部署数据库。</li>
+<li><strong>安装方法:</strong><ul>
+<li>可以通过 Docker 运行 Qdrant：<code>sudo docker run -d -p 6333:6333 qdrant/qdrant</code>。</li>
+<li>可以使用 Qdrant Cloud 托管服务。</li>
+</ul>
+</li>
+<li><strong>开源 License:</strong> Apache 2.0 许可证。</li>
+<li><strong>优点:</strong><ul>
+<li><strong>高性能的近似最近邻搜索:</strong>  基于 HNSW 技术，优化了大规模向量数据的相似性搜索。</li>
+<li><strong>过滤:</strong>  允许您为搜索和检索操作设置条件。  当您无法在嵌入中描述对象的特征时，过滤变得至关重要。</li>
+<li><strong>索引:</strong> Qdrant 支持不同类型的索引，包括向量索引、全文索引、有效负载索引、租户索引等。  向量和传统索引的结合改进了数据过滤和检索。</li>
+<li><strong>量化:</strong> Qdrant 提供不同的量化方法，包括标量、二进制量化和乘积量化。</li>
+<li><strong>开源:</strong>  可以根据需要自定义和修改数据库。</li>
+<li><strong>每个点多个向量:</strong> Qdrant 授权您将多个向量嵌入分配给单个数据点。  这使得它非常适合处理多模态数据的应用程序，其中文本和图像等数据被组合起来进行分析。</li>
+<li><strong>元数据大小:</strong> Quadrant 对元数据大小没有固有限制。  您可以根据需要附加额外的信息，也可以为配置设置限制。</li>
+<li><strong>可扩展性:</strong> Qdrant 支持垂直和水平扩展，并且适用于各种规模的部署。  您可以将其作为单个 Docker 节点、大型集群或混合云运行，具体取决于数据集的大小。 Qdrant 的架构允许使用副本和分片进行分布式部署，并且可以很好地扩展到数十亿个向量，同时将延迟降至最低。</li>
+<li><strong>性能:</strong> Qdrant 擅长提供针对特定用例量身定制的不同性能配置文件。  它提供高效的向量和有效负载索引、低延迟查询、优化器和高吞吐量，以及多种量化选项以进一步优化性能。</li>
+</ul>
+</li>
+<li><strong>缺点:</strong><ul>
+<li><strong>文档:</strong>  可能不够全面。</li>
+<li><strong>社区规模:</strong>  小于其他开源选项。</li>
+<li><strong>功能集:</strong>  仍在增长，可能缺乏一些高级功能。</li>
+<li><strong>过滤搜索操作:</strong>  对于过滤搜索操作，Qdrant 使用 HNSW 算法的可过滤版本，该算法在搜索过程中应用过滤器以确保仅考虑搜索图中的相关节点。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-5-Chroma"><a href="#2-5-Chroma" class="headerlink" title="2.5 Chroma"></a>2.5 Chroma</h3><ul>
+<li><strong>简介:</strong> Chroma 是一个开源的嵌入数据库。Chroma 通过使知识、事实和技能可用于大型语言模型 (LLM)，从而简化了构建 LLM 应用程序的过程。 Chroma 是一个开源 AI 应用程序数据库，它将向量搜索、文档存储、全文搜索、元数据过滤和多模态功能结合到一个平台中。  它提供了一个用户友好的界面，并可无缝集成到各种应用程序中。</li>
+<li><strong>安装方法:</strong>  可以通过 pip 安装 Chroma：<code>pip install chromadb</code>。</li>
+<li><strong>开源 License:</strong> Apache 2.0 许可证。</li>
+<li><strong>优点:</strong><ul>
+<li><strong>功能丰富:</strong>  查询、过滤、密度估计和许多其他功能。</li>
+<li><strong>框架支持:</strong>  支持 LangChain（Python 和 JavaScript）和 LlamaIndex。</li>
+<li><strong>相同的 API 可在 Python notebook 和生产集群中运行。</strong></li>
+<li><strong>易于使用和集成:</strong>  提供用户友好的界面，并可无缝集成到各种应用程序中。</li>
+</ul>
+</li>
+<li><strong>缺点:</strong><ul>
+<li><strong>社区和文档:</strong>  与更成熟的数据库相比，它仍然是一个相对较新的平台，文档和社区支持有限。</li>
+<li><strong>可扩展性:</strong>  可扩展性有限，存储上限最多为 100 万个向量点。</li>
+<li><strong>缺乏分布式数据替换:</strong>  限制了其对需求不断增长的应用程序的适用性。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-6-pgvector"><a href="#2-6-pgvector" class="headerlink" title="2.6 pgvector"></a>2.6 pgvector</h3><ul>
+<li><strong>简介:</strong> pgvector 是 Postgres 的开源向量相似性搜索扩展。pgvector 使您能够将向量与其他数据一起存储。它还支持 L2 距离、内积、余弦距离、L1 距离、汉明距离和 Jaccard 距离。此外，它支持任何带有 Postgres 客户端的语言。</li>
+<li><strong>安装方法:</strong><ul>
+<li>可以通过 Linux 和 Mac 编译和安装扩展来安装 pgvector。该扩展支持 Postgres 13+。</li>
+<li>您还可以使用 Docker、Homebrew、PGXN、APT、Yum 和 conda-forge 安装 pgvector。它预装了 Postgres.app 和许多托管提供商。</li>
+<li>对于 Windows，请确保安装了 Visual Studio 中的 C++ 支持。您可以使用 Docker 或 conda-forge 安装 pgvector。</li>
+</ul>
+</li>
+<li><strong>开源 License:</strong> MIT 许可证。</li>
+<li><strong>优点:</strong><ul>
+<li><strong>性能:</strong>  针对 PostgreSQL 中的向量搜索进行了优化。</li>
+<li><strong>成本效益:</strong>  开源且免费，无需额外许可费用。</li>
+<li><strong>灵活性:</strong>  适应多种机器学习和分析用例。</li>
+<li><strong>简单:</strong>  利用 PostgreSQL 的熟悉程度和强大功能，使其易于集成到现有 PostgreSQL 工作流程中。</li>
+<li><strong>经济高效:</strong>  利用现有的 PostgreSQL 基础架构，与独立的向量数据库相比，可能会降低成本。</li>
+</ul>
+</li>
+<li><strong>缺点:</strong><ul>
+<li><strong>可扩展性:</strong>  与专用向量数据库相比，大规模的局限性。</li>
+<li><strong>复杂性:</strong>  需要 PostgreSQL 专业知识才能进行有效的设置和性能调整。</li>
+<li><strong>可扩展性:</strong>  与 Milvus 相比，可能难以处理非常大的数据集和高查询负载。</li>
+<li><strong>功能有限:</strong>  与 Weaviate 和 Milvus 相比，功能和自定义选项更少。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-7-Faiss"><a href="#2-7-Faiss" class="headerlink" title="2.7 Faiss"></a>2.7 Faiss</h3><ul>
+<li><strong>简介:</strong> Faiss 是一个用于高效相似性搜索和密集向量聚类的库。它包含可以在任意大小的向量集中进行搜索的算法，甚至是那些可能不适合 RAM 的向量集。它还包含用于评估和参数调整的支持代码。Faiss 是用 C++ 编写的，带有完整的 Python 包装器。 Faiss 是一个用于高效相似性搜索和密集向量聚类的开源向量数据库。  它可作为 Python 中 Anaconda 的预编译库使用。 NVIDIA cuVS 的后端 GPU 实现也可以选择启用。  它使用 cmake 编译。  完整的 Faiss 文档可在 wiki 页面上找到，其中包括教程、常见问题解答和故障排除部分。 doxygen 文档提供从代码注释中提取的每类信息。</li>
+<li><strong>安装方法:</strong><ul>
+<li>推荐通过 Conda 安装 Faiss：<code>conda install -c pytorch faiss-cpu</code>。</li>
+<li>faiss-gpu 软件包提供支持 CUDA 的索引：<code>conda install -c pytorch faiss-gpu</code>。</li>
+<li>可以使用 pip 安装：<code>pip install faiss</code>。</li>
+<li>可以从源码安装。  首先使用 CMake 生成构建文件：<code>cmake -B build .</code>，然后使用 Make 构建 C++ 库：<code>make -C build -j faiss</code>。  可选地构建 Python 绑定：<code>make -C build -j swigfaiss</code>  和  <code>(cd build/faiss/python &amp;&amp; python setup.py install)</code>。</li>
+</ul>
+</li>
+<li><strong>开源 License:</strong> MIT 许可证。</li>
+<li><strong>优点:</strong><ul>
+<li><strong>高性能:</strong>  针对 CPU 和 GPU 进行了高度优化，使其能够高效地处理极其庞大的数据集。</li>
+<li><strong>灵活性:</strong>  支持多种索引类型，为不同的用例提供了灵活性。</li>
+<li><strong>可扩展性:</strong>  其可扩展性特别适用于企业级解决方案。</li>
+<li><strong>速度:</strong> FAISS 针对高速搜索进行了优化，可以高效地处理大型数据集。</li>
+<li><strong>可扩展性:</strong>  它可以管理数十亿个向量，使其适用于大数据应用程序。</li>
+<li><strong>灵活性:</strong>  支持多种索引策略和硬件加速（CPU&#x2F;GPU）。</li>
+<li><strong>开源:</strong>  开源允许广泛的定制和集成到各种系统中。</li>
+</ul>
+</li>
+<li><strong>缺点:</strong><ul>
+<li><strong>复杂性:</strong>  与其他解决方案相比，FAISS 可能需要更多配置和调整才能获得最佳结果。</li>
+<li><strong>内存使用:</strong>  内存消耗可能相对较高，尤其是对于大型数据集。</li>
+<li><strong>GPU 加速:</strong>  设置 GPU 加速对于某些用户来说可能很复杂。</li>
+<li><strong>复杂性:</strong>  设置和微调 FAISS 需要很好地理解底层算法和参数。</li>
+<li><strong>内存使用情况:</strong>  大规模索引可能占用大量内存，尤其是对于高维数据。</li>
+<li><strong>更新处理:</strong>  使用新数据动态更新索引可能具有挑战性，并且可能需要重新索引，这可能很耗时。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-8-HNSWLIB"><a href="#2-8-HNSWLIB" class="headerlink" title="2.8 HNSWLIB"></a>2.8 HNSWLIB</h3><ul>
+<li><strong>简介:</strong> HNSWLIB 是一个用于近似最近邻搜索的开源 C++ 库，它实现了分层导航小世界 (HNSW) 算法。它专为在具有各种距离度量的大规模数据集中进行高性能相似性搜索而设计。 Hnswlib 是一个利用 HNSW 算法的程序，该算法用于查找最近邻。 HNSW 代表分层导航小世界图。 Hnswlib 是开源的，可以通过 C++ 或 Python 运行。</li>
+<li><strong>安装方法:</strong>  可以使用 pip 安装 HNSWLIB：<code>pip install hnswlib</code>。</li>
+<li><strong>开源 License:</strong> Apache 2.0 许可证。</li>
+<li><strong>优点:</strong><ul>
+<li><strong>快速查询性能。</strong></li>
+<li><strong>支持多核并行。</strong></li>
+<li><strong>自定义距离度量：</strong>  欧几里得、余弦、L1 等。</li>
+<li><strong>提供 Python 和 C++ 接口。</strong></li>
+<li><strong>轻量级:</strong>  轻量级且没有依赖项（C++11 除外）。</li>
+<li><strong>增量索引:</strong>  完全支持增量索引构建和更新元素。</li>
+</ul>
+</li>
+<li><strong>缺点:</strong><ul>
+<li><strong>可扩展性有限。</strong></li>
+<li><strong>查询灵活性有限。</strong></li>
+<li><strong>内存占用大。</strong></li>
+</ul>
+</li>
+</ul>
+<h3 id="2-9-Vexvault"><a href="#2-9-Vexvault" class="headerlink" title="2.9 Vexvault"></a>2.9 Vexvault</h3><ul>
+<li><strong>简介:</strong> Vexvault 是一个 100% 基于浏览器的文档存储系统。 Vexvault 旨在使您的文件和数据可供 ChatGPT 等 AI 应用程序访问，同时确保用户的隐私和安全。  它试图尽可能易于集成和使用。</li>
+<li><strong>安装方法:</strong> Vexvault 是基于浏览器的，无需安装。</li>
+<li><strong>开源 License:</strong>  未知。</li>
+<li><strong>优点:</strong><ul>
+<li><strong>100% 基于浏览器:</strong>  无需安装任何软件。</li>
+<li><strong>基于 HNSWlib + indexeddb:</strong>  使用 HNSWlib 算法和 indexeddb 数据库。</li>
+<li><strong>零成本:</strong>  免费使用。</li>
+<li><strong>可扩展性:</strong>  通过将嵌入计算推送到边缘来实现可扩展性。</li>
+<li><strong>快速:</strong>  因为它可以省略网络。</li>
+<li><strong>大量的存储空间:</strong>  通过使用 indexeddb。</li>
+</ul>
+</li>
+<li><strong>缺点:</strong><ul>
+<li><strong>浏览器兼容性:</strong>  可能存在浏览器兼容性问题。</li>
+<li><strong>数据安全性:</strong>  数据存储在浏览器中，可能存在安全风险。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-10-Deep-Lake"><a href="#2-10-Deep-Lake" class="headerlink" title="2.10 Deep Lake"></a>2.10 Deep Lake</h3><ul>
+<li><strong>简介:</strong> Deep Lake 是一个由专有存储格式提供支持的 AI 数据库，专为利用自然语言处理的深度学习和基于 LLM 的应用程序而设计。</li>
+<li><strong>安装方法:</strong>  未知。</li>
+<li><strong>开源 License:</strong>  是。</li>
+<li><strong>优点:</strong><ul>
+<li><strong>专为深度学习和基于 LLM 的应用程序而设计:</strong>  支持存储各种数据类型，并提供查询、向量搜索、训练期间的数据流以及与 LangChain、LlamaIndex 和 Weights &amp; Biases 等工具的集成等功能。</li>
+<li><strong>存储所有数据类型。</strong></li>
+<li><strong>查询和向量搜索。</strong></li>
+<li><strong>训练期间的数据流。</strong></li>
+<li><strong>数据版本控制和沿袭。</strong></li>
+<li><strong>与多个工具集成。</strong></li>
+</ul>
+</li>
+<li><strong>缺点:</strong><ul>
+<li><strong>专有存储格式:</strong>  可能存在与其他系统集成的问题。</li>
+<li><strong>相对较新:</strong>  社区支持和文档可能有限。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-11-NMSLIB"><a href="#2-11-NMSLIB" class="headerlink" title="2.11 NMSLIB"></a>2.11 NMSLIB</h3><ul>
+<li><strong>简介:</strong>  非度量空间库 (NMSLIB) 是一个开源、高效的库，用于在通用度量和非度量空间中进行相似性搜索和最近邻搜索。  它支持各种相似性搜索算法和距离函数，使其适用于广泛的应用。</li>
+<li><strong>安装方法:</strong>  可以使用 pip 安装 NMSLIB 或从源码构建。</li>
+<li><strong>开源 License:</strong>  未知。</li>
+<li><strong>优点:</strong><ul>
+<li><strong>索引方法:</strong> HNSW、SW 图、VPTree 等。</li>
+<li><strong>自定义距离度量:</strong>  欧几里得、余弦、Jaccard 等。</li>
+<li><strong>高效的索引构建和查询处理。</strong></li>
+<li><strong>Python、C++ 和 Java 绑定。</strong></li>
+</ul>
+</li>
+<li><strong>缺点:</strong><ul>
+<li><strong>复杂性:</strong>  可能需要一些专业知识才能有效地使用。</li>
+<li><strong>文档:</strong>  文档可能不够全面。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-12-Cottontail-DB"><a href="#2-12-Cottontail-DB" class="headerlink" title="2.12 Cottontail DB"></a>2.12 Cottontail DB</h3><ul>
+<li><strong>简介:</strong> Cottontail DB 是一个面向多媒体检索的列存储。  它允许使用统一的数据和查询模型进行经典的布尔检索以及向量空间检索（最近邻搜索），用于相似性搜索。</li>
+<li><strong>安装方法:</strong>  未知。</li>
+<li><strong>开源 License:</strong>  未知。</li>
+<li><strong>优点:</strong><ul>
+<li><strong>索引方法:</strong> VAF、PQ、LSH 等。</li>
+<li><strong>各种距离函数。</strong></li>
+<li><strong>算术向量运算。</strong></li>
+<li><strong>自由文本搜索。</strong></li>
+<li><strong>关系数据实体用于元数据。</strong></li>
+<li><strong>gRPC 接口，带有针对 Java&#x2F;Kotlin 和 Python 的预构建客户端。</strong></li>
+</ul>
+</li>
+<li><strong>缺点:</strong><ul>
+<li><strong>相对较新:</strong>  社区支持和文档可能有限。</li>
+<li><strong>专门用于多媒体检索:</strong>  可能不适用于所有用例。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-13-LanceDB"><a href="#2-13-LanceDB" class="headerlink" title="2.13 LanceDB"></a>2.13 LanceDB</h3><ul>
+<li><strong>简介：</strong> LanceDB 是一个开源的、服务器 less 的向量数据库，专为机器学习工作负载设计。它基于 Lance 数据格式（一种现代的、列式的、可用于训练 AI 模型的数据格式），并提供了对多模态数据的支持。LanceDB 的目标是简化向量搜索的部署和管理，使其能够在边缘设备上运行，而无需单独的服务器。</li>
+<li><strong>安装方法：</strong><ul>
+<li>Pip: <code>pip install lancedb</code></li>
+<li>也可以通过 Conda 安装。</li>
+</ul>
+</li>
+<li><strong>开源 License:</strong> Apache License 2.0</li>
+<li><strong>优缺点：</strong><ul>
+<li><strong>优点：</strong><ul>
+<li><strong>Serverless：</strong> 无需单独的服务器进程，可直接嵌入到应用程序中。</li>
+<li><strong>边缘计算友好：</strong> 可以在边缘设备（如笔记本电脑、嵌入式系统）上运行。</li>
+<li><strong>基于 Lance 格式：</strong> Lance 格式针对机器学习工作负载进行了优化，提供高性能和低存储成本。</li>
+<li><strong>多模态数据支持：</strong> 支持文本、图像、视频、点云等多种数据类型。</li>
+<li><strong>易于使用：</strong> 提供 Python 和 JavaScript API，易于集成到现有项目中。</li>
+<li><strong>与其他工具集成</strong>: 可以与 LangChain, LlamaIndex 等工具整合。</li>
+<li><strong>免费</strong>: 免费开源使用。</li>
+</ul>
+</li>
+<li><strong>缺点：</strong><ul>
+<li><strong>相对较新：</strong> 社区和生态系统仍在发展中, 可能缺少一些高级功能。</li>
+<li><strong>分布式支持有限：</strong> 目前主要针对单机或边缘设备，分布式支持仍在开发中。</li>
+<li><strong>成熟度：</strong> 相比于一些成熟的向量数据库，LanceDB 的稳定性和可靠性可能还有待验证。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="2-14-商业数据库"><a href="#2-14-商业数据库" class="headerlink" title="2.14 商业数据库"></a>2.14 商业数据库</h3><p>除了开源向量数据库之外，还有一些商业向量数据库提供商，例如：</p>
+<ul>
+<li><strong>Pinecone:</strong>  提供完全托管的向量数据库服务，具有自动扩展、高性能和易用性等优点。</li>
+<li><strong>MongoDB Atlas Vector Search:</strong> MongoDB Atlas 是一个流行的开发者数据平台，它提供了向量搜索功能，可以与 MongoDB 数据库集成。</li>
+<li><strong>KDB.AI:</strong> KDB.AI 是一个向量数据库，它允许开发人员向其 AI 应用程序添加时间和语义上下文。</li>
+</ul>
+<p>好的，我们来增加 LanceDB 的研究，并更新报告内容。</p>
+<h3 id="3-综合比对（更新）"><a href="#3-综合比对（更新）" class="headerlink" title="3. 综合比对（更新）"></a>3. 综合比对（更新）</h3><table>
+<thead>
+<tr>
+<th>向量数据库</th>
+<th>性能</th>
+<th>可扩展性</th>
+<th>功能</th>
+<th>易用性</th>
+<th>社区支持</th>
+<th>成熟度</th>
+<th>成本</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Faiss</td>
+<td>极高，针对速度优化</td>
+<td>不支持分布式，但可通过分片实现</td>
+<td>向量搜索、多种索引 (Flat, IVF, HNSW, PQ 等)、聚类</td>
+<td>安装简单，Python API 友好，但需要手动管理数据存储</td>
+<td>活跃的社区，完善的文档，Facebook AI Research 提供支持</td>
+<td>非常成熟</td>
+<td>开源 (MIT License)</td>
+</tr>
+<tr>
+<td>Annoy</td>
+<td>高，内存占用小</td>
+<td>不支持分布式</td>
+<td>向量搜索、基于树的索引</td>
+<td>安装简单，Python API 友好，但需要手动管理数据存储</td>
+<td>相对活跃的社区，文档较完善</td>
+<td>比较成熟</td>
+<td>开源 (Apache 2.0)</td>
+</tr>
+<tr>
+<td>Milvus</td>
+<td>高，支持多种索引</td>
+<td>支持分布式部署 (Docker Compose, Kubernetes)</td>
+<td>向量搜索、多种索引、过滤、标量字段、数据更新、多租户</td>
+<td>多种安装方式 (Docker, Kubernetes, 源码)，API 友好 (Python, Java, Go)</td>
+<td>非常活跃的社区，完善的文档，Zilliz 提供商业支持</td>
+<td>比较成熟</td>
+<td>开源 (Apache 2.0)</td>
+</tr>
+<tr>
+<td>Vespa</td>
+<td>高, 针对实时应用优化</td>
+<td>支持水平扩展和分布式部署</td>
+<td>向量搜索, 文本搜索，结构化数据搜索，过滤，分组，排序</td>
+<td>比较复杂，需要一定的学习曲线</td>
+<td>活跃的社区，完善的文档, Yahoo 提供支持</td>
+<td>非常成熟</td>
+<td>开源 (Apache 2.0)</td>
+</tr>
+<tr>
+<td>Weaviate</td>
+<td>中等，支持多种索引</td>
+<td>支持分布式部署 (Docker Compose, Kubernetes)</td>
+<td>向量搜索、GraphQL API、多种索引、过滤、自动模式推断、模块化 (支持多种数据类型和模型)</td>
+<td>多种安装方式，GraphQL API 友好，但配置稍复杂</td>
+<td>活跃的社区，完善的文档，SeMI Technologies 提供商业支持</td>
+<td>比较成熟</td>
+<td>开源 (BSD 3-Clause)</td>
+</tr>
+<tr>
+<td>Qdrant</td>
+<td>高，针对相似度搜索优化</td>
+<td>支持分布式部署 (Docker, Kubernetes)</td>
+<td>向量搜索、HNSW 索引、过滤、Payload 存储、多向量支持</td>
+<td>Docker 安装简单，API 友好 (Python, Rust, Go)</td>
+<td>相对活跃的社区，文档较完善，Qdrant Solutions 提供商业支持</td>
+<td>比较成熟</td>
+<td>开源 (Apache 2.0)</td>
+</tr>
+<tr>
+<td>Pinecone</td>
+<td>极高，针对大规模数据优化</td>
+<td>完全托管，自动扩展</td>
+<td>向量搜索、过滤、实时数据摄取、命名空间</td>
+<td>API 简单易用，完全托管</td>
+<td>商业支持，文档完善</td>
+<td>成熟</td>
+<td>商业收费</td>
+</tr>
+<tr>
+<td>Chroma</td>
+<td>中等</td>
+<td>有限</td>
+<td>向量搜索, 文档存储, 全文搜索, 元数据过滤</td>
+<td>简单</td>
+<td>相对较新，文档和社区支持有限</td>
+<td>相对较新</td>
+<td>开源(Apache 2.0)</td>
+</tr>
+<tr>
+<td>pgvector</td>
+<td>中等, 依赖于 Postgres 的性能</td>
+<td>受限于 Postgres 的可扩展性</td>
+<td>向量相似性搜索 (L2 距离, 内积, 余弦距离), 与 Postgres 数据集成</td>
+<td>依赖于 Postgres 的安装和配置</td>
+<td>依赖于 Postgres 社区</td>
+<td>成熟</td>
+<td>开源(MIT License)</td>
+</tr>
+<tr>
+<td>HNSWLIB</td>
+<td>极高, 内存占用相对较大</td>
+<td>有限</td>
+<td>向量相似性搜索 (HNSW 算法)</td>
+<td>安装简单, 提供 Python 和 C++接口</td>
+<td>相对活跃的社区, 文档较完善</td>
+<td>比较成熟</td>
+<td>开源(Apache 2.0)</td>
+</tr>
+<tr>
+<td><strong>LanceDB</strong></td>
+<td><strong>高，基于 Lance 格式优化</strong></td>
+<td><strong>单机&#x2F;边缘，分布式支持在开发中</strong></td>
+<td><strong>向量搜索、多模态数据支持、基于 Lance 格式、Serverless</strong></td>
+<td><strong>安装简单，Python 和 JavaScript API 友好</strong></td>
+<td><strong>相对较新，社区和生态仍在发展中</strong></td>
+<td><strong>相对较新</strong></td>
+<td><strong>开源 (Apache 2.0)</strong></td>
+</tr>
+</tbody></table>
+<h3 id="4-总结和建议"><a href="#4-总结和建议" class="headerlink" title="4. 总结和建议"></a>4. 总结和建议</h3><p>向量数据库是 AI 应用的关键基础设施，选择合适的向量数据库对于应用的成功至关重要。本报告对市面上主流的向量数据库进行了详细的分析和对比，总结如下：</p>
+<ul>
+<li><strong>对于追求极致性能和速度，且数据量不大的场景：</strong> Faiss 和 Annoy 是不错的选择。它们都非常快，但 Faiss 功能更丰富，支持 GPU 加速。</li>
+<li><strong>对于需要处理海量数据，且需要分布式部署的场景：</strong> Milvus、Vespa、Weaviate 和 Qdrant 都是很好的选择。它们都支持分布式部署，可以处理百亿级别的向量数据。Milvus 功能更全面，Vespa 更适合实时应用, Weaviate 的 GraphQL API 更灵活, Qdrant 的过滤功能更强。</li>
+<li><strong>对于需要完全托管的服务的场景：</strong> Pinecone 是一个很好的选择。它提供了简单易用的 API，无需用户管理基础设施。</li>
+<li><strong>希望与现有 PostgreSQL 数据库集成的场景：</strong> pgvector 是一个不错的选择, 它可以利用现有的 PostgreSQL 基础设施.</li>
+<li><strong>对于希望快速构建原型或进行实验的场景:</strong> Chroma 是一个不错的选择, 它易于安装和使用.</li>
+<li><strong>对于需要极高性能，且对内存占用有一定要求的场景:</strong> HNSWLIB 是一个不错的选择, 它实现了 HNSW 算法。</li>
+<li><strong>对于需要在边缘设备上进行向量搜索的场景：</strong> LanceDB 的 Serverless 特性和对边缘计算的支持使其成为理想选择。</li>
+<li><strong>对于需要处理多模态数据，且希望简化部署的场景：</strong> LanceDB 提供了对多种数据类型的支持，并且无需单独的服务器进程。</li>
+<li><strong>对于希望使用现代的、针对机器学习优化的数据格式的场景：</strong> LanceDB 基于 Lance 格式，可以提供高性能和低存储成本。<br>最终选择哪个向量数据库，需要根据具体的应用场景、数据规模、性能要求、预算等因素进行综合考虑。 建议在选择之前，进行充分的测试和评估，以确保所选的数据库能够满足您的需求。</li>
+</ul>
+<h3 id="5-未来展望"><a href="#5-未来展望" class="headerlink" title="5. 未来展望"></a>5. 未来展望</h3><p>向量数据库领域正在快速发展，未来可能会出现以下趋势：</p>
+<ul>
+<li><strong>更强的多模态支持：</strong> 支持更多类型的数据（如图像、文本、音频、视频）的混合搜索。</li>
+<li><strong>更智能的索引：</strong> 自动选择和优化索引类型，减少用户的配置负担。</li>
+<li><strong>更完善的云原生支持：</strong> 与云平台更紧密的集成，提供更便捷的部署和管理方式。</li>
+<li><strong>更广泛的应用场景：</strong> 除了相似性搜索，向量数据库还将被应用于更多领域，如异常检测、时间序列分析等。</li>
+</ul>
+<p><strong>免责声明</strong></p>
+<p>本报告（“爬虫框架、自动化爬虫、AI 爬虫分析报告”）由[ViniJack.SJX] 根据公开可获得的信息以及作者的专业知识和经验撰写，旨在提供关于网络爬虫技术、相关框架和工具的分析和信息。</p>
+<p><strong>1. 信息准确性与完整性：</strong></p>
+<ul>
+<li>作者已尽最大努力确保报告中信息的准确性和完整性，但不对其绝对准确性、完整性或及时性做出任何明示或暗示的保证。</li>
+<li>报告中的信息可能随时间推移而发生变化，作者不承担更新报告内容的义务。</li>
+<li>报告中引用的第三方信息（包括但不限于网站链接、项目描述、数据统计等）均来自公开渠道，作者不对其真实性、准确性或合法性负责。</li>
+</ul>
+<p><strong>2. 报告用途与责任限制：</strong></p>
+<ul>
+<li>本报告仅供参考和学习之用，不构成任何形式的投资建议、技术建议、法律建议或其他专业建议。</li>
+<li>读者应自行判断和评估报告中的信息，并根据自身情况做出决策。</li>
+<li>对于因使用或依赖本报告中的信息而导致的任何直接或间接损失、损害或不利后果，作者不承担任何责任。</li>
+</ul>
+<p><strong>3. 技术使用与合规性：</strong></p>
+<ul>
+<li>本报告中提及的任何爬虫框架、工具或技术，读者应自行负责其合法合规使用。</li>
+<li>在使用任何爬虫技术时，读者应遵守相关法律法规（包括但不限于数据隐私保护法、知识产权法、网络安全法等），尊重网站的服务条款和 robots 协议，不得侵犯他人合法权益。</li>
+<li>对于因读者违反相关法律法规或不当使用爬虫技术而导致的任何法律责任或纠纷，作者不承担任何责任。</li>
+</ul>
+<p><strong>4. 知识产权：</strong></p>
+<ul>
+<li>本报告的版权归作者所有，未经作者书面许可，任何人不得以任何形式复制、传播、修改或使用本报告的全部或部分内容。</li>
+<li>报告中引用的第三方内容，其知识产权归原作者所有。</li>
+</ul>
+<p><strong>5. 其他：</strong></p>
+<ul>
+<li>本报告可能包含对未来趋势的预测，这些预测基于作者的判断和假设，不构成任何形式的保证。</li>
+<li>作者保留随时修改本免责声明的权利。</li>
+</ul>
+<p><strong>请在使用本报告前仔细阅读并理解本免责声明。如果您不同意本免责声明的任何条款，请勿使用本报告。</strong></p>
+</div><div class="article-licensing box"><div class="licensing-title"><p>向量数据库调研报告</p><p><a href="http://acorner.ac.cn/2025/02/14/向量数据库调研报告/">http://acorner.ac.cn/2025/02/14/向量数据库调研报告/</a></p></div><div class="licensing-meta level is-mobile"><div class="level-left"><div class="level-item is-narrow"><div><h6>作者</h6><p>ViniJack.SJX</p></div></div><div class="level-item is-narrow"><div><h6>发布于</h6><p>2025-02-14</p></div></div><div class="level-item is-narrow"><div><h6>更新于</h6><p>2025-02-19</p></div></div><div class="level-item is-narrow"><div><h6>许可协议</h6><p><a class="icons" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="icon fab fa-creative-commons"></i></a><a class="icons" rel="noopener" target="_blank" title="Attribution" href="https://creativecommons.org/licenses/by/4.0/"><i class="icon fab fa-creative-commons-by"></i></a><a class="icons" rel="noopener" target="_blank" title="Noncommercial" href="https://creativecommons.org/licenses/by-nc/4.0/"><i class="icon fab fa-creative-commons-nc"></i></a></p></div></div></div></div></div><div class="article-tags is-size-7 mb-4"><span class="mr-2">#</span><a class="link-muted mr-2" rel="tag" href="/tags/%E5%B7%A5%E5%85%B7/">工具</a><a class="link-muted mr-2" rel="tag" href="/tags/%E5%8E%9F%E7%90%86/">原理</a><a class="link-muted mr-2" rel="tag" href="/tags/RAG/">RAG</a><a class="link-muted mr-2" rel="tag" href="/tags/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/">向量数据库</a></div><div class="notification is-danger">You need to set <code>install_url</code> to use ShareThis. Please set it in <code>_config.yml</code>.</div></article></div><div class="card"><div class="card-content"><h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3><div class="buttons is-centered"><a class="button donate" href="https://github.com/A-Corner/a-corner.github.io" target="_blank" rel="noopener" data-type="afdian"><span class="icon is-small"><i class="fas fa-charging-station"></i></span><span>爱发电</span></a><a class="button donate" data-type="alipay"><span class="icon is-small"><i class="fab fa-alipay"></i></span><span>支付宝</span><span class="qrcode"><img src="/" alt="支付宝"></span></a><a class="button donate" href="/" target="_blank" rel="noopener" data-type="buymeacoffee"><span class="icon is-small"><i class="fas fa-coffee"></i></span><span>送我杯咖啡</span></a><a class="button donate" href="/" target="_blank" rel="noopener" data-type="patreon"><span class="icon is-small"><i class="fab fa-patreon"></i></span><span>Patreon</span></a><div class="notification is-danger">You forgot to set the <code>business</code> or <code>currency_code</code> for Paypal. Please set it in <code>_config.yml</code>.</div><a class="button donate" data-type="wechat"><span class="icon is-small"><i class="fab fa-weixin"></i></span><span>微信</span><span class="qrcode"><img src="/" alt="微信"></span></a></div></div></div><nav class="post-navigation mt-4 level is-mobile"><div class="level-start"><a class="article-nav-prev level level-item link-muted" href="/2025/02/14/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E7%88%AC%E8%99%AB%E9%A1%B9%E7%9B%AE%E5%AF%B9%E6%AF%94%E6%8A%A5%E5%91%8A/"><i class="level-item fas fa-chevron-left"></i><span class="level-item">AI自动化爬虫项目对比报告</span></a></div><div class="level-end"><a class="article-nav-next level level-item link-muted" href="/2025/02/08/Sparrow%EF%BC%9A%E5%83%8F%E9%BA%BB%E9%9B%80%E4%B8%80%E6%A0%B7%EF%BC%8C%E4%BB%8E%E6%96%87%E6%A1%A3%E4%B8%AD%E5%8F%BC%E5%87%BA%E4%BD%A0%E9%9C%80%E8%A6%81%E7%9A%84%E6%95%B0%E6%8D%AE%EF%BC%81/"><span class="level-item">Sparrow：像麻雀一样，从文档中叼出你需要的数据！</span><i class="level-item fas fa-chevron-right"></i></a></div></nav><div class="card" id="comments"><div class="card-content"><h3 class="title is-5">评论</h3><div class="notification is-danger">You forgot to set the <code>shortname</code> for Disqus. Please set it in <code>_config.yml</code>.</div></div></div></div><div class="column column-left is-4-tablet is-4-desktop is-3-widescreen  order-1"><div class="card widget" data-type="profile"><div class="card-content"><nav class="level"><div class="level-item has-text-centered flex-shrink-1"><div><figure class="image is-128x128 mx-auto mb-2"><img class="avatar" src="/img/avatar.png" alt="A-Corner"></figure><p class="title is-size-4 is-block" style="line-height:inherit;">A-Corner</p><p class="is-size-6 is-block">信息的一角</p><p class="is-size-6 is-flex justify-content-center"><i class="fas fa-map-marker-alt mr-1"></i><span>China（Guangzhou）</span></p></div></div></nav><nav class="level is-mobile"><div class="level-item has-text-centered is-marginless"><div><p class="heading">文章</p><a href="/archives/"><p class="title">7</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">分类</p><a href="/categories/"><p class="title">11</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">标签</p><a href="/tags/"><p class="title">12</p></a></div></div></nav><div class="level"><a class="level-item button is-primary is-rounded" href="https://github.com/A-Corner/a-corner.github.io" target="_blank" rel="me noopener">关注我</a></div><div class="level is-mobile is-multiline"><a class="level-item button is-transparent is-marginless" target="_blank" rel="me noopener" title="Github" href="https://github.com/A-Corner/a-corner.github.io"><i class="fab fa-github"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="me noopener" title="Facebook" href="https://facebook.com"><i class="fab fa-facebook"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="me noopener" title="Twitter" href="https://twitter.com"><i class="fab fa-twitter"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="me noopener" title="Dribbble" href="https://dribbble.com"><i class="fab fa-dribbble"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="me noopener" title="RSS" href="/"><i class="fas fa-rss"></i></a></div></div></div><div class="card widget" data-type="links"><div class="card-content"><div class="menu"><h3 class="menu-label">链接</h3><ul class="menu-list"><li><a class="level is-mobile" href="https://hexo.io" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">Hexo</span></span><span class="level-right"><span class="level-item tag">hexo.io</span></span></a></li><li><a class="level is-mobile" href="https://bulma.io" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">Bulma</span></span><span class="level-right"><span class="level-item tag">bulma.io</span></span></a></li></ul></div></div></div><div class="card widget" data-type="subscribe-email"><div class="card-content"><div class="menu"><h3 class="menu-label">订阅更新</h3><form action="https://feedburner.google.com/fb/a/mailverify" method="post" target="popupwindow" onsubmit="window.open(&#039;https://feedburner.google.com/fb/a/mailverify?uri=&#039;,&#039;popupwindow&#039;,&#039;scrollbars=yes,width=550,height=520&#039;);return true"><input type="hidden" value="" name="uri"><input type="hidden" name="loc" value="en_US"><div class="field has-addons"><div class="control has-icons-left is-expanded"><input class="input" name="email" type="email" placeholder="Email"><span class="icon is-small is-left"><i class="fas fa-envelope"></i></span></div><div class="control"><input class="button" type="submit" value="订阅"></div></div></form></div></div></div><div class="card widget"><div class="card-content"><div class="notification is-danger">You need to set <code>client_id</code> and <code>slot_id</code> to show this AD unit. Please set it in <code>_config.yml</code>.</div></div></div><div class="card widget" data-type="subscribe-email"><div class="card-content"><div class="menu"><h3 class="menu-label">follow.it</h3><form action="" method="post" target="_blank"><div class="field has-addons"><div class="control has-icons-left is-expanded"><input class="input" name="email" type="email" placeholder="Email"><span class="icon is-small is-left"><i class="fas fa-envelope"></i></span></div><div class="control"><input class="button" type="submit" value="订阅"></div></div></form></div></div></div><div class="column-right-shadow is-hidden-widescreen"></div></div><div class="column column-right is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only order-3"><!--!--><div class="card widget" data-type="categories"><div class="card-content"><div class="menu"><h3 class="menu-label">分类</h3><ul class="menu-list"><li><a class="level is-mobile" href="/categories/AI/"><span class="level-start"><span class="level-item">AI</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/LLM/"><span class="level-start"><span class="level-item">LLM</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/Model/"><span class="level-start"><span class="level-item">Model</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/RAG/"><span class="level-start"><span class="level-item">RAG</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A/"><span class="level-start"><span class="level-item">分析报告</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%8E%9F%E7%90%86/"><span class="level-start"><span class="level-item">原理</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/"><span class="level-start"><span class="level-item">向量数据库</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%B7%A5%E5%85%B7/"><span class="level-start"><span class="level-item">工具</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%BE%AE%E8%B0%83/"><span class="level-start"><span class="level-item">微调</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E6%A1%86%E6%9E%B6/"><span class="level-start"><span class="level-item">框架</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E9%A3%9F%E7%94%A8%E6%96%87%E6%A1%A3/"><span class="level-start"><span class="level-item">食用文档</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></div></div></div><div class="card widget" data-type="recent-posts"><div class="card-content"><h3 class="menu-label">最新文章</h3><article class="media"><div class="media-content"><p class="date"><time dateTime="2025-02-18T15:22:21.629Z">2025-02-18</time></p><p class="title"><a href="/2025/02/18/llm_gradient_descent/">大语言模型中的梯度值：深入理解与应用</a></p><p class="categories"><a href="/categories/LLM/">LLM</a> / <a href="/categories/%E5%8E%9F%E7%90%86/">原理</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2025-02-18T09:06:39.943Z">2025-02-18</time></p><p class="title"><a href="/2025/02/18/Embed%E6%A8%A1%E5%9E%8B%E7%A0%94%E7%A9%B6%E6%8A%A5%E5%91%8A/">Embedding 模型入门级研究报告</a></p><p class="categories"><a href="/categories/LLM/">LLM</a> / <a href="/categories/%E5%8E%9F%E7%90%86/">原理</a> / <a href="/categories/Model/">Model</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2025-02-14T16:03:29.233Z">2025-02-15</time></p><p class="title"><a href="/2025/02/15/%E7%88%AC%E8%99%AB%E6%A1%86%E6%9E%B6%E3%80%81%E8%87%AA%E5%8A%A8%E5%8C%96%E7%88%AC%E8%99%AB%E3%80%81AI%E7%88%AC%E8%99%AB%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A/">爬虫框架、自动化爬虫、AI爬虫分析报告</a></p><p class="categories"><a href="/categories/AI/">AI</a> / <a href="/categories/%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A/">分析报告</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2025-02-14T14:55:50.802Z">2025-02-14</time></p><p class="title"><a href="/2025/02/14/AI%E8%87%AA%E5%8A%A8%E5%8C%96%E7%88%AC%E8%99%AB%E9%A1%B9%E7%9B%AE%E5%AF%B9%E6%AF%94%E6%8A%A5%E5%91%8A/">AI自动化爬虫项目对比报告</a></p><p class="categories"><a href="/categories/AI/">AI</a> / <a href="/categories/%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A/">分析报告</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2025-02-14T09:13:11.344Z">2025-02-14</time></p><p class="title"><a href="/2025/02/14/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E8%B0%83%E7%A0%94%E6%8A%A5%E5%91%8A/">向量数据库调研报告</a></p><p class="categories"><a href="/categories/RAG/">RAG</a> / <a href="/categories/%E5%8E%9F%E7%90%86/">原理</a> / <a href="/categories/%E5%B7%A5%E5%85%B7/">工具</a> / <a href="/categories/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/">向量数据库</a></p></div></article></div></div><div class="card widget" data-type="archives"><div class="card-content"><div class="menu"><h3 class="menu-label">归档</h3><ul class="menu-list"><li><a class="level is-mobile" href="/archives/2025/02/"><span class="level-start"><span class="level-item">二月 2025</span></span><span class="level-end"><span class="level-item tag">7</span></span></a></li></ul></div></div></div><div class="card widget" data-type="tags"><div class="card-content"><div class="menu"><h3 class="menu-label">标签</h3><div class="field is-grouped is-grouped-multiline"><div class="control"><a class="tags has-addons" href="/tags/AI/"><span class="tag">AI</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/LLM/"><span class="tag">LLM</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Model/"><span class="tag">Model</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/RAG/"><span class="tag">RAG</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8E%9F%E7%90%86/"><span class="tag">原理</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/"><span class="tag">向量数据库</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%B7%A5%E5%85%B7/"><span class="tag">工具</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%BE%AE%E8%B0%83/"><span class="tag">微调</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%A1%86%E6%9E%B6/"><span class="tag">框架</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%88%AC%E8%99%AB/"><span class="tag">爬虫</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%87%AA%E5%8A%A8%E5%8C%96/"><span class="tag">自动化</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E9%A3%9F%E7%94%A8%E6%96%87%E6%A1%A3/"><span class="tag">食用文档</span><span class="tag">1</span></a></div></div></div></div></div></div></div></div></section><footer class="footer"><div class="container"><div class="level"><div class="level-start"><a class="footer-logo is-block mb-2" href="/"><img src="/img/logo.svg" alt="A-Acorner 信息的一角" height="28"></a><p class="is-size-7"><span>&copy; 2025 ViniJack.SJX</span>  Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a> &amp; <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a></p><p class="is-size-7">© 2025 A-Corner</p></div><div class="level-end"><div class="field has-addons"><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/A-Corner/a-corner.github.io"><i class="fab fa-github"></i></a></p></div></div></div></div></footer><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script><script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script><script>moment.locale("zh-cn");</script><script>var IcarusThemeSettings = {
+            article: {
+                highlight: {
+                    clipboard: true,
+                    fold: 'unfolded'
+                }
+            }
+        };</script><script data-pjax src="/js/column.js"></script><script src="/js/animation.js"></script><a id="back-to-top" title="回到顶端" href="javascript:;"><i class="fas fa-chevron-up"></i></a><script data-pjax src="/js/back_to_top.js" defer></script><!--!--><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.js" defer></script><script>window.addEventListener("load", () => {
+      window.cookieconsent.initialise({
+        type: "info",
+        theme: "edgeless",
+        static: false,
+        position: "bottom-left",
+        content: {
+          message: "此网站使用Cookie来改善您的体验。",
+          dismiss: "知道了！",
+          allow: "允许使用Cookie",
+          deny: "拒绝",
+          link: "了解更多",
+          policy: "Cookie政策",
+          href: "https://www.cookiesandyou.com/",
+        },
+        palette: {
+          popup: {
+            background: "#edeff5",
+            text: "#838391"
+          },
+          button: {
+            background: "#4b81e8"
+          },
+        },
+      });
+    });</script><script src="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/js/lightgallery.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/js/jquery.justifiedGallery.min.js" defer></script><script>window.addEventListener("load", () => {
+            if (typeof $.fn.lightGallery === 'function') {
+                $('.article').lightGallery({ selector: '.gallery-item' });
+            }
+            if (typeof $.fn.justifiedGallery === 'function') {
+                if ($('.justified-gallery > p > .gallery-item').length) {
+                    $('.justified-gallery > p > .gallery-item').unwrap();
+                }
+                $('.justified-gallery').justifiedGallery();
+            }
+        });</script><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js"></script><script src="/js/pjax.js"></script><!--!--><!--!--><!--!--><script data-pjax src="/js/main.js" defer></script><div class="searchbox"><div class="searchbox-container"><div class="searchbox-header"><div class="searchbox-input-container"><input class="searchbox-input" type="text" placeholder="想要查找什么..."></div><a class="searchbox-close" href="javascript:;">×</a></div><div class="searchbox-body"></div></div></div><script data-pjax src="/js/insight.js" defer></script><script data-pjax>document.addEventListener('DOMContentLoaded', function () {
+            loadInsight({"contentUrl":"/content.json"}, {"hint":"想要查找什么...","untitled":"(无标题)","posts":"文章","pages":"页面","categories":"分类","tags":"标签"});
+        });</script></body></html>
