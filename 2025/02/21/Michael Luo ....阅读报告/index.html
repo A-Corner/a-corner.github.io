@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta><title>关于“DeepScaleR：通过扩展强化学习，用1.5B模型超越O1-Preview”（译文）阅读报告 - A-Acorner 信息的一角</title><link rel="manifest" href="/manifest.json"><meta name="application-name" content="A-Acorner 信息的一角"><meta name="msapplication-TileImage" content="/img/一角favicon.jpg"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="A-Acorner 信息的一角"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="description" content="关于“DeepScaleR：通过扩展强化学习，用1.5B模型超越O1-Preview”（译文）阅读报告"><meta property="og:type" content="blog"><meta property="og:title" content="关于“DeepScaleR：通过扩展强化学习，用1.5B模型超越O1-Preview”（译文）阅读报告"><meta property="og:url" content="http://acorner.ac.cn/2025/02/21/Michael%20Luo%20....%E9%98%85%E8%AF%BB%E6%8A%A5%E5%91%8A/"><meta property="og:site_name" content="A-Acorner 信息的一角"><meta property="og:description" content="关于“DeepScaleR：通过扩展强化学习，用1.5B模型超越O1-Preview”（译文）阅读报告"><meta property="og:locale" content="zh_CN"><meta property="og:image" content="http://acorner.ac.cn/img/og_image.png"><meta property="article:published_time" content="2025-02-21T03:26:59.380Z"><meta property="article:modified_time" content="2025-02-21T03:43:07.821Z"><meta property="article:author" content="ViniJack.SJX"><meta property="article:tag" content="LLM"><meta property="article:tag" content="原理"><meta property="article:tag" content="微调"><meta property="article:tag" content="深度学习"><meta property="article:tag" content="分析报告"><meta property="article:tag" content="强化学习"><meta property="article:tag" content="阅读报告"><meta property="twitter:card" content="summary"><meta property="twitter:image:src" content="http://acorner.ac.cn/img/og_image.png"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"http://acorner.ac.cn/2025/02/21/Michael%20Luo%20....%E9%98%85%E8%AF%BB%E6%8A%A5%E5%91%8A/"},"headline":"关于“DeepScaleR：通过扩展强化学习，用1.5B模型超越O1-Preview”（译文）阅读报告","image":["http://acorner.ac.cn/img/og_image.png"],"datePublished":"2025-02-21T03:26:59.380Z","dateModified":"2025-02-21T03:43:07.821Z","author":{"@type":"Person","name":"ViniJack.SJX"},"publisher":{"@type":"Organization","name":"A-Acorner 信息的一角","logo":{"@type":"ImageObject","url":"http://acorner.ac.cn/img/一角logo.png"}},"description":"关于“DeepScaleR：通过扩展强化学习，用1.5B模型超越O1-Preview”（译文）阅读报告"}</script><link rel="canonical" href="http://acorner.ac.cn/2025/02/21/Michael%20Luo%20....%E9%98%85%E8%AF%BB%E6%8A%A5%E5%91%8A/"><link rel="icon" href="/img/%E4%B8%80%E8%A7%92favicon.jpg"><link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.0.0/css/all.css"><link data-pjax rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/atom-one-light.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600&amp;family=Roboto+Mono"><link data-pjax rel="stylesheet" href="/css/cyberpunk.css"><style>body>.footer,body>.navbar,body>.section{opacity:0}</style><!--!--><!--!--><!--!--><!--!--><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/css/lightgallery.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/css/justifiedGallery.min.css"><!--!--><!--!--><!--!--><style>.pace{-webkit-pointer-events:none;pointer-events:none;-webkit-user-select:none;-moz-user-select:none;user-select:none}.pace-inactive{display:none}.pace .pace-progress{background:#3273dc;position:fixed;z-index:2000;top:0;right:100%;width:100%;height:2px}</style><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><!--!--><!--!--><!-- hexo injector head_end start --><script>
+  (function () {
+      function switchTab() {
+          if (!location.hash) {
+            return;
+          }
+
+          const id = '#' + CSS.escape(location.hash.substring(1));
+          const $tabMenu = document.querySelector(`.tabs a[href="${id}"]`);
+          if (!$tabMenu) {
+            return;
+          }
+
+          const $tabMenuContainer = $tabMenu.parentElement.parentElement;
+          Array.from($tabMenuContainer.children).forEach($menu => $menu.classList.remove('is-active'));
+          Array.from($tabMenuContainer.querySelectorAll('a'))
+              .map($menu => document.getElementById($menu.getAttribute("href").substring(1)))
+              .forEach($content => $content.classList.add('is-hidden'));
+
+          if ($tabMenu) {
+              $tabMenu.parentElement.classList.add('is-active');
+          }
+          const $activeTab = document.querySelector(id);
+          if ($activeTab) {
+              $activeTab.classList.remove('is-hidden');
+          }
+      }
+      switchTab();
+      window.addEventListener('hashchange', switchTab, false);
+  })();
+  </script><!-- hexo injector head_end end --><meta name="generator" content="Hexo 7.3.0"></head><body class="is-3-column"><nav class="navbar navbar-main"><div class="container navbar-container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/"><img src="/img/%E4%B8%80%E8%A7%92logo.png" alt="A-Acorner 信息的一角" height="28"></a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">Home</a><a class="navbar-item" href="/archives">Archives</a><a class="navbar-item" href="/categories">Categories</a><a class="navbar-item" href="/tags">Tags</a><a class="navbar-item" href="/about">About</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/A-Corner/a-corner.github.io"><i class="fab fa-github"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-6-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time dateTime="2025-02-21T03:26:59.380Z" title="2025/2/21 11:26:59">2025-02-21</time>发表</span><span class="level-item"><time dateTime="2025-02-21T03:43:07.821Z" title="2025/2/21 11:43:07">2025-02-21</time>更新</span><span class="level-item"><a class="link-muted" href="/categories/LLM/">LLM</a><span> / </span><a class="link-muted" href="/categories/%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A/">分析报告</a><span> / </span><a class="link-muted" href="/categories/%E5%8E%9F%E7%90%86/">原理</a><span> / </span><a class="link-muted" href="/categories/%E5%BE%AE%E8%B0%83/">微调</a><span> / </span><a class="link-muted" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><span> / </span><a class="link-muted" href="/categories/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/">强化学习</a><span> / </span><a class="link-muted" href="/categories/%E9%98%85%E8%AF%BB%E6%8A%A5%E5%91%8A/">阅读报告</a></span><span class="level-item">1 小时读完 (大约10275个字)</span></div></div><h1 class="title is-3 is-size-4-mobile">关于“DeepScaleR：通过扩展强化学习，用1.5B模型超越O1-Preview”（译文）阅读报告</h1><div class="content"><h1 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h1><p>今天我们要解读的是一篇非常有意思的文章，主题是“DeepScaleR：通过扩展强化学习，用1.5B模型超越O1-Preview”。这名字听起来有点拗口，别担心，我们一步步来拆解。</p>
+<h1 id="原文"><a href="#原文" class="headerlink" title="原文"></a>原文</h1><p>这里先放上中文译文，如有兴趣阅读原文的朋友可以访问URL：</p>
+<span id="more"></span>
+
+<p><a target="_blank" rel="noopener" href="https://pretty-radio-b75.notion.site/DeepScaleR-Surpassing-O1-Preview-with-a-1-5B-Model-by-Scaling-RL-19681902c1468005bed8ca303013a4e2">https://pretty-radio-b75.notion.site/DeepScaleR-Surpassing-O1-Preview-with-a-1-5B-Model-by-Scaling-RL-19681902c1468005bed8ca303013a4e2</a></p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br></pre></td><td class="code"><pre><span class="line">DeepScaleR：通过扩展强化学习，用1.5B模型超越O1-Preview</span><br><span class="line"></span><br><span class="line">作者： Michael Luo<span class="emphasis">*, Sijun Tan*</span>, Justin Wong†, Xiaoxiang Shi, William Tang, Manan Roongta, Colin Cai, Jeffrey Luo</span><br><span class="line"></span><br><span class="line">顾问： Tianjun Zhang<span class="emphasis">*, Li Erran Li, Raluca Ada Popa, Ion Stoica</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">（*</span>：项目负责人；†：重要贡献者）</span><br><span class="line"></span><br><span class="line">✨ 摘要（TL;DR）</span><br><span class="line"></span><br><span class="line">强化学习的魔力正在显现！我们隆重推出DeepScaleR-1.5B-Preview，这是一个通过简单的强化学习（RL）从Deepseek-R1-Distilled-Qwen-1.5B微调而来的语言模型。它在AIME2024测试中取得了令人瞩目的43.1%的Pass@1准确率（比基础模型提高了14.3%），仅用15亿参数就超越了OpenAI的o1-preview模型的性能。我们开源了数据集、代码和训练日志，以便每个人都可以通过强化学习来提升智能水平。</span><br><span class="line"></span><br><span class="line">🌐 资源链接</span><br><span class="line"></span><br><span class="line">网站： https://agentica-project.com/</span><br><span class="line">Github代码库： https://github.com/agentica-project/deepscaler</span><br><span class="line">Hugging Face模型： https://huggingface.co/agentica-org/DeepScaleR-1.5B-Preview</span><br><span class="line">Hugging Face数据集： https://huggingface.co/datasets/agentica-org/DeepScaleR-Preview-Dataset</span><br><span class="line">Weights &amp; Biases训练日志： https://wandb.ai/mluo/deepscaler-1.5b</span><br><span class="line">评估日志： https://drive.google.com/file/d/1V<span class="emphasis">_rYKoL35WmubbmWN6PeFg4zo5QOug8X/view?usp=sharing</span></span><br><span class="line"><span class="emphasis">DeepScaleR-1.5B-Preview模型性能</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">模型	AIME 2024	MATH 500	AMC 2023	Minerva Math	Olympiad Bench	平均值</span></span><br><span class="line"><span class="emphasis">DeepScaleR-1.5B-Preview	43.1	87.8	73.6	30.2	50.0	57.0</span></span><br><span class="line"><span class="emphasis">DeepSeek-R1-Distill-Qwen-1.5B	28.8	82.8	62.9	26.5	43.3	48.9</span></span><br><span class="line"><span class="emphasis">O1-Preview	40.0	81.4	-	-	-	-</span></span><br><span class="line"><span class="emphasis">图1：DeepScaleR在AIME2024上的Pass@1准确率随训练进程的变化。在第1040步和第1520步，上下文长度分别扩展到16K和24K。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">在这篇博客中，我们将逐步揭示如何利用强化学习将一个小型模型转变为强大的推理模型。我们推出的DeepScaleR-1.5B-Preview模型，通过4万个高质量数学问题进行训练，耗费了3800个A100 GPU小时（约4500美元），在多个竞赛级数学基准测试中超越了OpenAI的o1-preview模型。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">引言：迈向强化学习在大语言模型中的普及化</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">最近开源的Deepseek-R1模型（一个可与OpenAI的o1模型相媲美的模型）标志着推理模型普及化的重大进步。然而，其确切的训练配方、超参数和底层系统仍然不为人知。在这项工作中，我们朝着完全开源的、可扩展强化学习推理模型的配方迈出了重要一步。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">扩展强化学习的最大挑战之一是高昂的计算成本。例如，我们发现直接复现DeepSeek-R1的实验（≥32K上下文，约8000步）至少需要70,000个A100 GPU小时——即使对于1.5B模型也是如此。为了解决这个问题，我们利用了一个蒸馏模型，并引入了一种新颖的迭代式长度扩展方案进行强化学习，将计算需求降低到仅3800个A100 GPU小时——减少了18.42倍——同时实现了超越OpenAI的o1-preview模型的性能，而模型大小仅为1.5B。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">我们的工作表明，通过强化学习开发定制的推理模型可以是可扩展的，并且具有成本效益。在接下来的博客文章中，我们将介绍我们的数据集整理和训练方法，展示评估结果，并分享我们从研究中获得的关键见解。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">DeepScaleR的秘诀</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">1. 数据集整理</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">我们的训练数据集包括1984-2023年的AIME问题、2023年之前的AMC问题，以及来自Omni-MATH和Still数据集的问题，这些问题来自各种国家和国际数学竞赛。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">我们的数据处理流程包括三个关键步骤：</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">提取答案： 对于AMC和AIME等数据集，我们使用gemini-1.5-pro-002从AoPS官方解答中提取答案。</span></span><br><span class="line"><span class="emphasis">去除重复问题： 我们使用RAG技术，结合sentence-transformers/all-MiniLM-L6-v2模型的嵌入，来消除重复的问题。为了防止数据污染，我们还检查了训练集和测试集之间是否存在重叠。</span></span><br><span class="line"><span class="emphasis">过滤无法评分的问题： 某些数据集（如Omni-MATH）包含一些无法使用Sympy进行评估、需要LLM（大语言模型）进行判定的问题。由于使用LLM判定可能会减慢训练速度并引入嘈杂的奖励信号，我们增加了一个额外的过滤步骤来删除这些无法评分的问题。</span></span><br><span class="line"><span class="emphasis">经过重复数据删除和过滤，我们最终的训练数据集包含大约40,000个独特的问题-答案对。我们将在未来的运行中扩展我们的数据集。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">2. 奖励函数</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">正如Deepseek-R1所倡导的，我们采用结果奖励模型（ORM）而不是过程奖励模型（PRM）来避免奖励机制被“钻空子”。总而言之，我们的奖励函数返回：</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">1 - 如果LLM的答案通过了基本的LaTeX/Sympy检查。</span></span><br><span class="line"><span class="emphasis">0 - 如果LLM的答案不正确或格式不正确（例如，缺少<span class="language-xml"><span class="tag">&lt;<span class="name">think</span>&gt;</span></span>、<span class="language-xml"><span class="tag">&lt;/<span class="name">think</span>&gt;</span></span>分隔符）。</span></span><br><span class="line"><span class="emphasis">3. 迭代式上下文长度扩展：先短后长</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">图2：DeepScaleR的平均响应长度和训练奖励随训练进程的变化。曲线显示了窗口大小为100的运行平均值。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">扩展强化学习进行推理任务的一个关键挑战是选择最佳的训练上下文窗口。推理工作负载的计算密集度很高，因为它们生成的输出比标准任务长得多，这会减慢轨迹采样和策略梯度更新的速度。将上下文窗口大小加倍会使训练计算量增加至少2倍。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">这就引入了一个基本的权衡：更长的上下文为模型提供了更多的思考空间，但会显著降低训练速度；而较短的上下文可以加速训练，但可能会限制模型解决需要较长上下文的更难问题的能力。因此，在效率和准确性之间取得适当的平衡至关重要。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">总而言之，我们的训练方案采用了Deepseek的GRPO算法，包括以下两个步骤：</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">首先，我们使用最大8K上下文进行强化学习训练，以实现更有效的推理和高效的训练。</span></span><br><span class="line"><span class="emphasis">接下来，我们将训练扩展到16K和24K上下文，以便模型可以解决更具挑战性的、以前未解决的问题。</span></span><br><span class="line"><span class="emphasis">3.1 用8K上下文引导有效的思维链（CoT）</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">在启动我们的完整训练运行之前，我们评估了Deepseek-R1-Distilled-Qwen-1.5B在AIME2024上的表现，并分析了轨迹统计数据。平均而言，不正确的回答包含的token数量是正确回答的三倍（20,346 vs. 6,395）。这表明，较长的回答通常会导致不正确的结果。因此，立即使用长上下文窗口进行训练可能效率低下，因为大多数token实际上都被浪费了。此外，我们在评估日志中观察到，冗长的回答表现出重复的模式，表明它们对有效的思维链（CoT）推理没有实质性贡献。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">鉴于这一见解，我们以8K上下文启动训练，实现了22.9%的初始AIME2024准确率——仅比原始模型低6%。这一策略被证明是有效的：在训练过程中，平均训练奖励从46%增加到58%，而平均响应长度从5500个token下降到3500个token（见图2）。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">基础模型	DeepScaleR-1.5b-8k	变化</span></span><br><span class="line"><span class="emphasis">AIME Pass@1	28.9%	33.9%	+5%</span></span><br><span class="line"><span class="emphasis">正确回答的平均token数	6396.0	3661.2	-2734.8</span></span><br><span class="line"><span class="emphasis">不正确回答的平均token数	20346.3	6976.8	-13369.5</span></span><br><span class="line"><span class="emphasis">总平均token数	16335.6	5850.9	−10484.7</span></span><br><span class="line"><span class="emphasis">更重要的是，将输出限制在8K token内，使得模型更有效地利用上下文。如表所示，我们的模型为正确和不正确的答案生成的响应都显著缩短，同时仅用三分之一的token就将AIME准确率提高了5%。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">3.2 在转折点扩展到16K上下文</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">在大约1000步之后，我们的8K运行出现了一个有趣的转变：响应长度再次开始增加。然而，这导致了收益递减——准确率趋于平稳并最终下降。与此同时，响应截断率从4.2%上升到6.5%，表明更多的响应在上下文限制处被截断。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">图3：在8K运行中，响应长度在1000步后回升，但训练奖励最终下降。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">图4：在8K上下文运行中，响应长度截断率在1000步后上升。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">这些结果表明，模型试图通过“更长时间地思考”来提高训练奖励。然而，随着它生成更长的响应，它越来越多地遇到8K上下文窗口的上限，从而限制了进一步的改进。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">认识到这是一个自然的过渡点，我们决定“放飞笼中鸟”。我们采用了第1040步的检查点——响应长度开始呈上升趋势——并重新启动了16K上下文窗口的训练。这种两阶段方法比从一开始就以16K进行训练要高效得多：8K引导将平均响应长度保持在3000个token，而不是9000个token，使得这一阶段的训练速度至少提高了2倍。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">在这次切换之后，我们观察到训练奖励、响应长度和AIME准确率都有了稳步提高。在额外的500步之后，平均响应长度从3500个token增加到5500个token，AIME2024 Pass@1准确率达到38%。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">3.3 用24K魔法超越O1-preview✨</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">在16K上下文中额外训练500步后，我们注意到性能开始趋于平稳——平均训练奖励收敛于62.5%，AIME Pass@1准确率徘徊在38%左右，响应长度再次开始下降。与此同时，最大响应截断率上升到2%。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">为了最终实现O1级别的性能，我们决定释放24K魔法——将上下文窗口增加到24K。我们采用了16K运行的第480步检查点，并重新启动了24K上下文窗口的训练运行。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">随着上下文窗口的扩展，模型终于获得了自由。大约50步后，我们的模型最终超过了40%的AIME准确率，并在第200步最终达到43%。24K魔法完全生效！</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">24k magic in the air 🔮 —Bruno Mars (24K魔法弥漫空中)</span></span><br><span class="line"><span class="emphasis">总的来说，我们的训练运行包括约1750步。最初的8K阶段在8个A100 GPU上训练，而16K和24K阶段将训练扩展到32个A100 GPU。总共，训练花费了大约3800个A100小时，相当于在32个A100上运行大约5天，计算成本约为4500美元。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">评估</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">我们在竞赛级数学基准测试上评估我们的模型，包括AIME 2024、AMC 2023、MATH-500、Minerva Math和OlympiadBench。下面报告的是Pass@1准确率，每个问题取16个样本的平均值。我们用来验证分数的基线模型以下划线标出。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">模型	AIME 2024	MATH 500	AMC 2023	Minerva Math	OlympiadBench	平均值</span></span><br><span class="line"><span class="emphasis">Qwen-2.5-Math-7B-Instruct	13.3	79.8	50.6	34.6	40.7	43.8</span></span><br><span class="line"><span class="emphasis">rStar-Math-7B	26.7	78.4	47.5	-	47.1	-</span></span><br><span class="line"><span class="emphasis">Eurus-2-7B-PRIME	26.7	79.2	57.8	38.6	42.1	48.9</span></span><br><span class="line"><span class="emphasis">Qwen2.5-7B-SimpleRL	26.7	82.4	62.5	39.7	43.3	50.9</span></span><br><span class="line"><span class="emphasis">DeepSeek-R1-Distill-Qwen-1.5B	28.8	82.8	62.9	26.5	43.3	48.9</span></span><br><span class="line"><span class="emphasis">Still-1.5B	32.5	84.4	66.7	29.0	45.4	51.6</span></span><br><span class="line"><span class="emphasis">DeepScaleR-1.5B-Preview	43.1	87.8	73.6	30.2	50.0	57.0</span></span><br><span class="line"><span class="emphasis">O1-Preview	40.0	81.4	-	-	-	-</span></span><br><span class="line"><span class="emphasis">我们将DeepScaleR与我们使用的基础DeepSeek模型以及最近探索强化学习用于推理任务的学术工作进行了比较。DeepScaleR在所有基准测试中都显著优于基础模型，在AIME2024上实现了14.4%的绝对提升，总体提高了8.1%。此外，DeepScaleR超越了最近的学术工作，如rSTAR、Prime和SimpleRL，这些工作是从7B模型微调而来的。如图5所示，DeepScaleR仅用1.5B参数就实现了O1-preview级别的性能——效率显著提高。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">图5：AIME准确率与模型大小的关系 - DeepScaleR实现了性能和大小的最佳帕累托效率组合。</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">关键要点</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">强化学习的扩展效应也可以在小型模型中体现。 Deepseek-R1表明，直接在小型模型上应用强化学习不如蒸馏有效。他们的消融实验表明，在Qwen-32B上进行强化学习在AIME上达到47%，而仅蒸馏就达到72.6%。一个常见的误解是，强化学习的扩展效应只对大型模型有益。然而，通过从大型模型中蒸馏出高质量的SFT（监督微调）数据，小型模型也可以通过强化学习更有效地学习推理。我们的结果证实了这一点：强化学习将AIME准确率从28.9%提高到43.1%！这些发现表明，仅靠SFT或强化学习是不够的。相反，通过将高质量的SFT蒸馏与强化学习扩展相结合，我们可以真正释放LLM的推理潜力。</span></span><br><span class="line"><span class="emphasis">迭代式长度扩展可以实现更有效的长度扩展。 先前的工作[1, 2]表明，直接在16K上下文上训练强化学习并不能比8K带来显著的改进，这可能是因为模型没有足够的计算资源来充分利用扩展的上下文。最近的一项工作[3]表明，较长的响应长度包含冗余的自我反思，导致不正确的结果。我们的实验与这些发现一致。通过首先在较短的上下文（8K）中优化推理，我们可以在后续的16K和24K运行中实现更快、更有效的训练。这种迭代方法在扩展到更长的上下文之前，使模型建立在有效的思维模式基础上，使基于强化学习的长度扩展更有效率。</span></span><br><span class="line"><span class="emphasis">结论</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">我们的工作旨在揭示强化学习对LLM的扩展效应，并使其为每个人所用。DeepScaleR-1.5B-Preview是我们朝着这一目标努力的第一个模型，以43.1%的Pass@1准确率超越了o1-preview。我们坚信，普及强化学习的扩展效应是一项社区工作，欢迎开源贡献/赞助！让我们共同努力，拓展强化学习在LLM推理中的前沿！</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">引用</span></span><br><span class="line"><span class="emphasis"></span></span><br><span class="line"><span class="emphasis">@misc&#123;deepscaler2025,</span></span><br><span class="line"><span class="emphasis">  title=&#123;DeepScaleR: Surpassing O1-Preview with a 1.5B Model by Scaling RL&#125;,</span></span><br><span class="line"><span class="emphasis">  author=&#123;Michael Luo and Sijun Tan and Justin Wong and Xiaoxiang Shi and William Y. Tang and Manan Roongta and Colin Cai and Jeffrey Luo and Tianjun Zhang and Li Erran Li and Raluca Ada Popa and Ion Stoica&#125;,</span></span><br><span class="line"><span class="emphasis">  howpublished=&#123;\url&#123;https://pretty-radio-b75.notion.site/DeepScaleR-Surpassing-O1-Preview-with-a-1-5B-Model-by-Scaling-RL-19681902c1468005bed8ca303013a4e2&#125;&#125;,</span></span><br><span class="line"><span class="emphasis">  note=&#123;Notion Blog&#125;,</span></span><br><span class="line"><span class="emphasis">  year=&#123;2025&#125;</span></span><br><span class="line"><span class="emphasis">&#125;</span></span><br><span class="line"><span class="emphasis">content_</span>copy download</span><br><span class="line">Use code with caution.</span><br></pre></td></tr></table></figure>
+
+<h1 id="解读"><a href="#解读" class="headerlink" title="解读"></a>解读</h1><h2 id="解读-1"><a href="#解读-1" class="headerlink" title="解读"></a>解读</h2><p><strong>1. 主题拆解，化繁为简</strong></p>
+<p>这篇文章讲的是什么呢？咱们先来提炼几个关键词：</p>
+<ul>
+<li><strong>DeepScaleR:</strong> 这是文章提出的一个语言模型。</li>
+<li><strong>1.5B:</strong> 指的是这个模型的参数量为15亿。</li>
+<li><strong>O1-Preview:</strong> 这是OpenAI的一个语言模型，可以理解为一个“学霸”级别的存在。</li>
+<li><strong>强化学习（RL）:</strong> 这是一种机器学习方法，类似于训练小狗，做对了给奖励，做错了给惩罚，让模型不断进步。</li>
+<li><strong>Scaling RL:</strong>  指的是扩大强化学习的应用规模，让它能处理更复杂的问题。</li>
+</ul>
+<p>所以，这篇文章的主旨就是：<strong>作者们提出了一个名为DeepScaleR的语言模型，它只有15亿参数，却通过强化学习的方法，在数学推理能力上超越了OpenAI的“学霸”模型O1-Preview。</strong></p>
+<p>是不是一下子清晰多了？就像我们剥洋葱一样，把复杂的问题一层层剥开，核心内容就显现出来了。</p>
+<p><strong>2. 知识关联，构建体系</strong></p>
+<p>为了更好地理解这篇文章，我们需要补充一些背景知识：</p>
+<ul>
+<li><strong>语言模型（Language Model）：</strong> 简单来说，就是一种能够理解和生成人类语言的AI模型。你可以和它聊天，让它写文章，甚至让它做数学题。</li>
+<li><strong>参数量：</strong> 可以理解为模型内部的“神经元”数量。一般来说，参数量越大，模型越复杂，能力也越强。但参数量大的模型也需要更多的计算资源来训练和运行。</li>
+<li><strong>强化学习（Reinforcement Learning, RL）：</strong>  想象一下训练小狗的过程。你给小狗一个指令（比如“坐下”），如果它做对了，你就给它一块肉骨头作为奖励；如果它做错了，你就不给奖励。小狗会逐渐学会听从你的指令。强化学习也是类似的，它让AI模型在一个环境中不断尝试，根据结果的好坏给予奖励或惩罚，从而让模型学会做出最佳决策。</li>
+<li><strong>AIME、MATH 500、AMC 2023、Minerva Math、Olympiad Bench:</strong> 这些都是数学竞赛或数据集，用来测试模型的数学推理能力。</li>
+</ul>
+<p><strong>3. 循序渐进，由浅入深</strong></p>
+<p>现在，让我们一步步深入了解DeepScaleR的奥秘：</p>
+<p><strong>3.1 为什么要做这件事？</strong></p>
+<ul>
+<li><strong>挑战“学霸”：</strong> OpenAI的O1-Preview模型很厉害，但DeepScaleR的作者们想证明，即使是参数量较小的模型，通过强化学习也能达到甚至超越“学霸”的水平。</li>
+<li><strong>降低成本：</strong> 训练大模型非常耗费资源，就像烧钱一样。DeepScaleR的作者们希望找到一种更经济、更高效的方法来训练强大的推理模型。</li>
+</ul>
+<p><strong>3.2 DeepScaleR是怎么做的？</strong></p>
+<ul>
+<li><strong>站在巨人的肩膀上：</strong> DeepScaleR并不是从零开始的，它是基于Deepseek-R1-Distilled-Qwen-1.5B模型进行微调的。这就好比你已经学会了基本的数学知识，现在要进一步学习奥数。</li>
+<li><strong>数据集的秘密：</strong> 作者们精心挑选了大约4万个高质量的数学问题，包括AIME、AMC、Omni-MATH和Still等数据集中的题目。他们还用了一些技巧来处理这些数据，比如：<ul>
+<li>用Gemini-1.5-pro-002模型从官方解答中提取答案。</li>
+<li>用RAG技术去除重复的问题。</li>
+<li>过滤掉那些无法用Sympy自动评分的问题。</li>
+</ul>
+</li>
+<li><strong>奖励机制：</strong> DeepScaleR采用了Outcome Reward Model (ORM) 作为奖励函数：<ul>
+<li>如果模型的答案正确，而且格式规范，就给1分。</li>
+<li>如果答案错误或者格式不对，就给0分。</li>
+</ul>
+</li>
+<li><strong>迭代式上下文扩展（Iterative Context Lengthening）：</strong> 这是DeepScaleR的一大创新点。作者们发现，直接用很长的上下文（比如32K）来训练模型，效率很低，而且容易浪费计算资源。他们采用了分阶段训练的方法：<ul>
+<li><strong>第一阶段：</strong> 用8K的上下文进行训练，让模型学会更有效地利用上下文信息。</li>
+<li><strong>第二阶段：</strong> 当模型的推理能力遇到瓶颈时，将上下文扩展到16K。</li>
+<li><strong>第三阶段：</strong> 为了进一步提升性能，将上下文扩展到24K。</li>
+</ul>
+</li>
+</ul>
+<p>这种方法就像我们学习一样，先打好基础，再逐步挑战更难的问题。</p>
+<p><strong>3.3 DeepScaleR的效果如何？</strong></p>
+<p>文章用一张表格展示了DeepScaleR在多个数学竞赛和数据集上的表现：</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>AIME 2024</th>
+<th>MATH 500</th>
+<th>AMC 2023</th>
+<th>Minerva Math</th>
+<th>Olympiad Bench</th>
+<th>Avg.</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DeepScaleR-1.5B-Preview</td>
+<td>43.1</td>
+<td>87.8</td>
+<td>73.6</td>
+<td>30.2</td>
+<td>50.0</td>
+<td>57.0</td>
+</tr>
+<tr>
+<td>DeepSeek-R1-Distill-Qwen-1.5B</td>
+<td>28.8</td>
+<td>82.8</td>
+<td>62.9</td>
+<td>26.5</td>
+<td>43.3</td>
+<td>48.9</td>
+</tr>
+<tr>
+<td>O1-Preview</td>
+<td>40.0</td>
+<td>81.4</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody></table>
+<p>可以看出，DeepScaleR在所有测试中都明显优于基础模型DeepSeek-R1-Distill-Qwen-1.5B，而且在AIME 2024上，它的Pass@1准确率（43.1%）超过了O1-Preview（40.0%）。</p>
+<p><strong>4. 文风生动，引人入胜</strong></p>
+<p>这篇文章的作者们文笔很不错，用了很多生动的比喻和例子，让复杂的概念变得更容易理解。比如：</p>
+<ul>
+<li>把强化学习比作训练小狗。</li>
+<li>把迭代式上下文扩展比作“先关在笼子里，再放飞小鸟”。</li>
+<li>引用Bruno Mars的歌曲《24K Magic》来形容24K上下文带来的神奇效果。</li>
+</ul>
+<p><strong>5. 图文并茂，代码说话</strong></p>
+<p>文章中还配了几张图，帮助我们更好地理解训练过程：</p>
+<ul>
+<li><strong>图1：</strong> 展示了DeepScaleR在AIME2024上的Pass@1准确率随着训练的进行而不断提高。</li>
+<li><strong>图2：</strong> 展示了DeepScaleR的平均回答长度和训练奖励的变化情况。</li>
+<li><strong>图3和图4：</strong> 展示了8K上下文训练过程中，回答长度和截断比例的变化情况。</li>
+</ul>
+<p>文章中没有直接提供代码，但是提供了模型、数据集、训练日志和评估日志的链接，方便感兴趣的同学进一步研究。</p>
+<p>DeepScaleR这项工作证明了，即使是参数量较小的模型，通过精心设计的强化学习方法，也能在特定任务上取得出色的表现。这为我们打开了一扇新的大门，让我们看到了更高效、更经济的AI模型训练方法。</p>
+<h1 id="延伸解读。"><a href="#延伸解读。" class="headerlink" title="延伸解读。"></a>延伸解读。</h1><p><strong>延伸解读方向：</strong></p>
+<ol>
+<li><strong>DeepScaleR的局限性：</strong> 虽然DeepScaleR很厉害，但它是不是完美的呢？有没有什么不足之处？</li>
+<li><strong>DeepScaleR的潜在应用：</strong> 除了做数学题，DeepScaleR还能用来做什么？</li>
+<li><strong>DeepScaleR对我们的启发：</strong> 从DeepScaleR的研究中，我们可以学到什么？对未来的AI研究有什么启示？</li>
+<li><strong>与其他方法的对比：</strong> 除了DeepScaleR使用的GRPO算法，还有哪些强化学习算法可以用于语言模型训练？它们各自有什么优缺点？</li>
+<li><strong>复现DeepScaleR：</strong> 如果我们想自己动手复现DeepScaleR，需要做哪些准备？有哪些坑需要注意？</li>
+</ol>
+<p><strong>详细解读：</strong></p>
+<p><strong>1. DeepScaleR的局限性</strong></p>
+<ul>
+<li><strong>领域局限性：</strong> DeepScaleR主要针对数学推理任务进行了优化，它在其他类型的任务（比如文本摘要、情感分析等）上表现如何，还需要进一步验证。</li>
+<li><strong>数据依赖性：</strong> DeepScaleR的成功很大程度上依赖于高质量的训练数据。如果训练数据质量不高，或者数据量不足，模型的性能可能会受到影响。</li>
+<li><strong>可解释性：</strong> 强化学习模型通常被认为是“黑盒子”，我们很难理解模型做出决策的具体原因。这在某些需要高可解释性的应用场景下可能会成为问题。</li>
+<li><strong>泛化能力：</strong> 虽然DeepScaleR在多个数学竞赛数据集上表现出色，但它在面对真实世界中更复杂、更多样的数学问题时，能否保持同样的性能，还有待观察。</li>
+</ul>
+<p><strong>2. DeepScaleR的潜在应用</strong></p>
+<ul>
+<li><strong>教育领域：</strong> DeepScaleR可以作为智能辅导系统，帮助学生解答数学难题，提供个性化的学习指导。</li>
+<li><strong>科研领域：</strong> DeepScaleR可以辅助科研人员进行数学公式推导、定理证明等工作，加速科研进程。</li>
+<li><strong>金融领域：</strong> DeepScaleR可以用于金融建模、风险评估等需要复杂数学计算的场景。</li>
+<li><strong>其他需要推理能力的领域：</strong> 任何需要逻辑推理、问题解决的任务，都有可能受益于DeepScaleR的技术。</li>
+</ul>
+<p><strong>3. DeepScaleR对我们的启发</strong></p>
+<ul>
+<li><strong>小模型也有大潜力：</strong> DeepScaleR证明了，即使是参数量较小的模型，通过巧妙的训练方法，也能取得出色的性能。这启示我们，不要一味追求大模型，要注重模型的效率和优化。</li>
+<li><strong>强化学习的重要性：</strong> DeepScaleR的成功凸显了强化学习在提升模型推理能力方面的巨大潜力。未来，我们可以期待更多基于强化学习的AI模型在各个领域大放异彩。</li>
+<li><strong>迭代式学习的价值：</strong> DeepScaleR采用的迭代式上下文扩展策略，为我们提供了一种新的训练思路。这种分阶段、逐步提升的方法，可以帮助模型更高效地学习。</li>
+<li><strong>开源精神：</strong> DeepScaleR的作者们公开了数据集、代码和训练日志，这种开放、共享的精神值得我们学习。</li>
+</ul>
+<p><strong>4. 与其他方法的对比</strong></p>
+<p>DeepScaleR使用了Deepseek提出的GRPO（Generalized Proximal Policy Optimization）算法。除了GRPO，还有一些其他的强化学习算法也可以用于语言模型训练，比如：</p>
+<ul>
+<li><strong>PPO (Proximal Policy Optimization):</strong>  PPO是OpenAI提出的一种经典的强化学习算法，它通过限制策略更新的幅度来保证训练的稳定性。</li>
+<li><strong>A2C (Advantage Actor-Critic):</strong> A2C是一种基于Actor-Critic框架的算法，它同时训练一个策略网络（Actor）和一个价值网络（Critic），通过价值网络来评估策略的好坏。</li>
+<li><strong>DPO (Direct Preference Optimization):</strong> DPO是一种直接优化偏好的方法。不训练奖励模型，而是直接让人类标注者对模型的不同输出进行排序，然后用这些排序数据来训练模型。</li>
+<li><strong>RRHF (Rank Responses to Align Language Models with Human Feedback):</strong> RRHF也是一种基于排序数据的方法，它更进一步，让人类标注者对模型的多个输出进行排序。</li>
+</ul>
+<p>这些算法各有优缺点：</p>
+<table>
+<thead>
+<tr>
+<th align="left">算法</th>
+<th align="left">优点</th>
+<th align="left">缺点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">PPO</td>
+<td align="left">稳定、易于实现、在许多任务上表现良好</td>
+<td align="left">对超参数敏感、可能收敛到局部最优</td>
+</tr>
+<tr>
+<td align="left">A2C</td>
+<td align="left">可以处理连续动作空间、比PPO更高效</td>
+<td align="left">训练不稳定、可能需要较长时间才能收敛</td>
+</tr>
+<tr>
+<td align="left">DPO</td>
+<td align="left">简单、直接、不需要训练奖励模型</td>
+<td align="left">数据标注成本高、可能受到人类标注者偏见的影响</td>
+</tr>
+<tr>
+<td align="left">RRHF</td>
+<td align="left">更充分地利用人类反馈信息</td>
+<td align="left">数据标注成本更高、模型训练更复杂</td>
+</tr>
+<tr>
+<td align="left"><strong>GRPO</strong></td>
+<td align="left">相对较新，DeepScaleR文章中表示其效果好。</td>
+<td align="left"><strong>需要更多案例来验证其效果，可能存在调参难度。</strong></td>
+</tr>
+</tbody></table>
+<p><strong>5. 复现DeepScaleR</strong></p>
+<p>如果我们想自己动手复现DeepScaleR，需要做以下准备：</p>
+<ul>
+<li><strong>硬件：</strong> 至少需要一块A100 GPU，如果想达到文章中的训练规模，最好有32块A100 GPU。</li>
+<li><strong>软件：</strong> 需要安装Python、PyTorch、Transformers等库。</li>
+<li><strong>数据：</strong> 需要下载DeepScaleR的作者们提供的数据集，或者自己准备类似的高质量数学问题数据集。</li>
+<li><strong>代码：</strong> 可以参考DeepScaleR的作者们提供的Github仓库中的代码。</li>
+<li><strong>耐心和毅力：</strong> 训练强化学习模型需要花费大量的时间和精力，需要不断尝试、调参，才能取得好的效果。</li>
+</ul>
+<p><strong>需要注意的坑：</strong></p>
+<ul>
+<li><strong>环境配置：</strong> 确保你的环境配置正确，各种库的版本兼容。</li>
+<li><strong>超参数调整：</strong> 强化学习模型对超参数非常敏感，需要仔细调整学习率、批大小、上下文长度等参数。</li>
+<li><strong>评估指标：</strong> 要选择合适的评估指标来衡量模型的性能，比如Pass@1准确率。</li>
+<li><strong>过拟合：</strong> 要注意防止模型在训练集上过拟合，可以采用一些正则化方法，比如dropout、权重衰减等。</li>
+</ul>
+<h2 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h2><p>  再进一步思考，聚焦于DeepScaleR在<strong>小模型推理</strong>以及<strong>垂直领域二次训练</strong>这两个应用场景上的潜力与挑战。</p>
+<p><strong>1. 小模型推理</strong></p>
+<ul>
+<li><p><strong>优势：</strong></p>
+<ul>
+<li><strong>部署成本低：</strong> 小模型（如DeepScaleR的1.5B参数）相比于动辄数百亿、数千亿参数的大模型，对计算资源的要求大大降低。这意味着可以将它们部署在边缘设备（如手机、嵌入式设备）上，或者在云端使用更便宜的计算实例，从而降低部署成本。</li>
+<li><strong>推理速度快：</strong> 参数量小，计算量也小，因此推理速度更快，响应时间更短。这对于实时性要求高的应用场景（如自动驾驶、实时翻译）非常重要。</li>
+<li><strong>能耗低：</strong> 小模型推理所需的能耗更低，更环保，也更适合电池供电的设备。</li>
+</ul>
+</li>
+<li><p><strong>DeepScaleR的启示：</strong></p>
+<ul>
+<li>DeepScaleR证明了小模型通过精细的训练（特别是强化学习），也能在特定任务上达到甚至超越大模型的性能。这为小模型推理应用提供了信心。</li>
+<li>DeepScaleR的迭代式上下文扩展策略，提示我们在小模型推理时，可以根据任务的复杂度和计算资源的限制，灵活调整上下文长度，以达到最佳的性能和效率平衡。</li>
+</ul>
+</li>
+<li><p><strong>挑战：</strong></p>
+<ul>
+<li><strong>通用性：</strong> 小模型通常在通用性上不如大模型。它们可能在特定任务上表现出色，但在其他任务上表现不佳。</li>
+<li><strong>知识容量：</strong> 小模型的参数量有限，可能无法存储和处理大量的知识。这可能会限制它们在需要广泛知识的任务上的表现。</li>
+</ul>
+</li>
+<li><p><strong>未来方向：</strong></p>
+<ul>
+<li><strong>模型压缩：</strong> 可以进一步研究模型压缩技术（如剪枝、量化、知识蒸馏），在保持性能的同时，进一步减小模型的大小。</li>
+<li><strong>高效算法：</strong> 可以探索更高效的推理算法，例如稀疏注意力机制、动态计算图等，以加速小模型的推理过程。</li>
+</ul>
+</li>
+</ul>
+<p><strong>2. 垂直领域二次训练</strong></p>
+<ul>
+<li><p><strong>优势：</strong></p>
+<ul>
+<li><strong>定制化：</strong> 垂直领域（如医疗、金融、法律）通常有独特的数据和任务需求。通过在通用预训练模型（如DeepScaleR的基础模型）上进行二次训练，可以快速定制出适应特定领域需求的模型。</li>
+<li><strong>数据效率：</strong> 相比于从零开始训练一个模型，二次训练通常只需要较少的领域数据就能达到较好的效果。</li>
+<li><strong>性能提升：</strong> 二次训练可以使模型更好地适应领域数据的特点，从而提升模型在特定任务上的性能。</li>
+</ul>
+</li>
+<li><p><strong>DeepScaleR的启示：</strong></p>
+<ul>
+<li>DeepScaleR本身就是一个二次训练的例子（在Deepseek-R1-Distilled-Qwen-1.5B基础上进行强化学习微调）。这表明，即使是相对较小的模型，通过二次训练也能获得显著的性能提升。</li>
+<li>DeepScaleR的数据处理和奖励函数设计方法，可以为其他领域的二次训练提供参考。</li>
+</ul>
+</li>
+<li><p><strong>挑战：</strong></p>
+<ul>
+<li><strong>领域数据获取：</strong> 高质量的领域数据通常难以获取，而且可能涉及隐私和安全问题。</li>
+<li><strong>领域知识融合：</strong> 如何将领域知识有效地融入到模型中，是一个挑战。</li>
+<li><strong>灾难性遗忘：</strong> 二次训练可能会导致模型遗忘之前学到的通用知识。</li>
+</ul>
+</li>
+<li><p><strong>未来方向：</strong></p>
+<ul>
+<li><strong>数据增强：</strong> 可以研究各种数据增强技术，以扩充领域数据集，提高模型的泛化能力。</li>
+<li><strong>知识注入：</strong> 可以探索将领域知识图谱、规则等外部知识融入到模型中的方法。</li>
+<li><strong>持续学习：</strong> 可以研究持续学习方法，使模型能够在不断学习新领域知识的同时，保留原有的通用能力。</li>
+<li><strong>Few-shot&#x2F;Zero-shot Learning:</strong> 探索如何利用少量标注数据，甚至零标注数据进行垂直领域模型的训练，以进一步降低对标注数据的依赖。</li>
+</ul>
+</li>
+</ul>
+<p>DeepScaleR的研究为小模型推理和垂直领域二次训练带来了新的思路和希望。它表明，通过精细的训练方法和策略，小模型也能在特定任务上展现出强大的能力。未来，我们需要进一步探索如何克服小模型在通用性、知识容量等方面的局限性，以及如何更有效地进行垂直领域模型的二次训练，以充分发挥小模型的潜力，推动AI技术的普及和应用。</p>
+<p>希望这次的深入思考对大家有所启发！</p>
+<hr>
+<p>就DeepScaleR的研究，本人都在着手准备下手垂直领域的模仿。请期待作者之后关于这方面的课题文章 </p>
+<h2 id="复现准备"><a href="#复现准备" class="headerlink" title="复现准备"></a>复现准备</h2><p>在这里先放出大概准备复现的学习资料（其实就是为自己复现准备使用的，臭美的放上来而已。哈哈😂）</p>
+<p>准备阶段 - 学习知识目录列表：</p>
+<p><strong>I. DeepScaleR 项目概况</strong></p>
+<ol>
+<li><strong>项目背景与问题</strong><ul>
+<li>大型语言模型 (LLM) 在数学推理方面的挑战。</li>
+<li>现有方法在处理复杂、多步骤数学问题时的局限性。</li>
+<li>DeepScaleR 提出的动机：利用强化学习 (RL) 提升 LLM 的数学推理能力。</li>
+</ul>
+</li>
+<li><strong>项目目标</strong><ul>
+<li>开发一个能够有效解决复杂数学问题的小型 LLM (1.5B 参数)。</li>
+<li>在 AIME (美国数学邀请赛) 等基准测试上取得优异成绩。</li>
+<li>验证通过强化学习和上下文长度扩展来提升 LLM 数学推理能力的可行性。</li>
+</ul>
+</li>
+<li><strong>项目方法</strong><ul>
+<li><strong>核心思想：</strong> Group Relative Policy Optimization (GRPO) + 迭代式上下文长度扩展。</li>
+<li><strong>GRPO:</strong> 一种改进的强化学习算法，专为 LLM 训练设计。</li>
+<li><strong>迭代式上下文长度扩展：</strong> 逐步增加模型处理的上下文长度，以适应更复杂的推理过程。</li>
+</ul>
+</li>
+<li><strong>项目成果</strong><ul>
+<li>DeepScaleR-1.5B 在 AIME 2024 等数学推理任务上的表现。</li>
+<li>与同等规模模型以及更大规模模型的比较。</li>
+<li>DeepScaleR 方法的有效性和创新性。</li>
+</ul>
+</li>
+</ol>
+<p><strong>II. 强化学习 (RL) 基础</strong></p>
+<ol>
+<li><h2 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a><strong>基本概念</strong></h2><ul>
+<li><strong>Agent (智能体):</strong> 与环境交互并学习策略的实体。</li>
+<li><strong>Environment (环境):</strong> Agent 所处的外部世界，提供状态、动作和奖励。</li>
+<li><strong>State (状态):</strong> 环境的当前描述。</li>
+<li><strong>Action (动作):</strong> Agent 在特定状态下采取的行为。</li>
+<li><strong>Reward (奖励):</strong> 环境对 Agent 动作的反馈，用于评估动作的好坏。</li>
+<li><strong>Policy (策略):</strong> Agent 根据当前状态选择动作的规则或概率分布。</li>
+<li><strong>Value Function (价值函数):</strong> 评估一个状态或状态-动作对的长期价值。</li>
+<li><strong>Goal (目标):</strong> 最大化累积奖励。</li>
+</ul>
+</li>
+<li><strong>Policy Gradient</strong><ul>
+<li><strong>基本思想：</strong> 直接优化策略，通过梯度上升来更新策略参数。</li>
+<li><strong>REINFORCE 算法：</strong> 一种基本的 Policy Gradient 算法。</li>
+<li><strong>Actor-Critic 算法：</strong> 结合 Policy Gradient 和 Value Function 的方法。</li>
+</ul>
+</li>
+<li><strong>Proximal Policy Optimization (PPO)</strong><ul>
+<li><strong>动机：</strong> 提高 Policy Gradient 的稳定性和样本效率。</li>
+<li><strong>Clipped Surrogate Objective (裁剪的代理目标函数):</strong> 限制策略更新的幅度，防止策略变化过大。</li>
+<li><strong>Importance Sampling (重要性采样):</strong> 使用旧策略生成的数据来估计新策略的性能。</li>
+</ul>
+</li>
+<li><strong>Advantage Function</strong><ul>
+<li><strong>定义：</strong> 动作价值函数与状态价值函数之间的差值，表示采取某个动作相对于平均水平的优势。</li>
+<li><strong>作用：</strong> 减少方差，提高训练稳定性。</li>
+</ul>
+</li>
+<li><strong>KL Divergence</strong><ul>
+<li><strong>定义：</strong> 衡量两个概率分布之间差异的指标。</li>
+<li><strong>在 RL 中的应用：</strong> 限制策略更新的幅度，防止策略偏离过远。</li>
+</ul>
+</li>
+</ol>
+<p><strong>III. DeepSeek-R1-Distilled-Qwen-1.5B 模型</strong></p>
+<ol>
+<li><strong>模型结构</strong><ul>
+<li>基于 Transformer 架构。</li>
+<li>1.5B 参数规模。</li>
+<li>Qwen-1.5B的蒸馏模型。</li>
+</ul>
+</li>
+<li><strong>模型特点</strong><ul>
+<li>在保持较小规模的同时，具有良好的性能。</li>
+<li>经过预训练，具备一定的语言理解和生成能力。</li>
+<li>适合作为强化学习的初始模型。</li>
+</ul>
+</li>
+<li><strong>模型获取</strong><ul>
+<li>确定模型可以从哪里获取到, 比如 Hugging Face.</li>
+</ul>
+</li>
+</ol>
+<hr>
+<p><strong>免责声明</strong></p>
+<p>本报告（“爬虫框架、自动化爬虫、AI爬虫分析报告”）由[ViniJack.SJX] 根据公开可获得的信息以及作者的专业知识和经验撰写，旨在提供关于网络爬虫技术、相关框架和工具的分析和信息。</p>
+<p><strong>1. 信息准确性与完整性：</strong></p>
+<ul>
+<li><p>作者已尽最大努力确保报告中信息的准确性和完整性，但不对其绝对准确性、完整性或及时性做出任何明示或暗示的保证。</p>
+</li>
+<li><p>报告中的信息可能随时间推移而发生变化，作者不承担更新报告内容的义务。</p>
+</li>
+<li><p>报告中引用的第三方信息（包括但不限于网站链接、项目描述、数据统计等）均来自公开渠道，作者不对其真实性、准确性或合法性负责。</p>
+</li>
+</ul>
+<p><strong>2. 报告用途与责任限制：</strong></p>
+<ul>
+<li><p>本报告仅供参考和学习之用，不构成任何形式的投资建议、技术建议、法律建议或其他专业建议。</p>
+</li>
+<li><p>读者应自行判断和评估报告中的信息，并根据自身情况做出决策。</p>
+</li>
+<li><p>对于因使用或依赖本报告中的信息而导致的任何直接或间接损失、损害或不利后果，作者不承担任何责任。</p>
+</li>
+</ul>
+<p><strong>3. 技术使用与合规性：</strong></p>
+<ul>
+<li><p>本报告中提及的任何爬虫框架、工具或技术，读者应自行负责其合法合规使用。</p>
+</li>
+<li><p>在使用任何爬虫技术时，读者应遵守相关法律法规（包括但不限于数据隐私保护法、知识产权法、网络安全法等），尊重网站的服务条款和robots协议，不得侵犯他人合法权益。</p>
+</li>
+<li><p>对于因读者违反相关法律法规或不当使用爬虫技术而导致的任何法律责任或纠纷，作者不承担任何责任。</p>
+</li>
+</ul>
+<p><strong>4. 知识产权：</strong></p>
+<ul>
+<li><p>本报告的版权归作者所有，未经作者书面许可，任何人不得以任何形式复制、传播、修改或使用本报告的全部或部分内容。</p>
+</li>
+<li><p>报告中引用的第三方内容，其知识产权归原作者所有。</p>
+</li>
+</ul>
+<p><strong>5. 其他：</strong></p>
+<ul>
+<li><p>本报告可能包含对未来趋势的预测，这些预测基于作者的判断和假设，不构成任何形式的保证。</p>
+</li>
+<li><p>作者保留随时修改本免责声明的权利。</p>
+</li>
+</ul>
+<p><strong>请在使用本报告前仔细阅读并理解本免责声明。如果您不同意本免责声明的任何条款，请勿使用本报告。</strong></p>
+</div><div class="article-licensing box"><div class="licensing-title"><p>关于“DeepScaleR：通过扩展强化学习，用1.5B模型超越O1-Preview”（译文）阅读报告</p><p><a href="http://acorner.ac.cn/2025/02/21/Michael Luo ....阅读报告/">http://acorner.ac.cn/2025/02/21/Michael Luo ....阅读报告/</a></p></div><div class="licensing-meta level is-mobile"><div class="level-left"><div class="level-item is-narrow"><div><h6>作者</h6><p>ViniJack.SJX</p></div></div><div class="level-item is-narrow"><div><h6>发布于</h6><p>2025-02-21</p></div></div><div class="level-item is-narrow"><div><h6>更新于</h6><p>2025-02-21</p></div></div><div class="level-item is-narrow"><div><h6>许可协议</h6><p><a class="icons" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="icon fab fa-creative-commons"></i></a><a class="icons" rel="noopener" target="_blank" title="Attribution" href="https://creativecommons.org/licenses/by/4.0/"><i class="icon fab fa-creative-commons-by"></i></a><a class="icons" rel="noopener" target="_blank" title="Noncommercial" href="https://creativecommons.org/licenses/by-nc/4.0/"><i class="icon fab fa-creative-commons-nc"></i></a></p></div></div></div></div></div><div class="article-tags is-size-7 mb-4"><span class="mr-2">#</span><a class="link-muted mr-2" rel="tag" href="/tags/LLM/">LLM</a><a class="link-muted mr-2" rel="tag" href="/tags/%E5%8E%9F%E7%90%86/">原理</a><a class="link-muted mr-2" rel="tag" href="/tags/%E5%BE%AE%E8%B0%83/">微调</a><a class="link-muted mr-2" rel="tag" href="/tags/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a><a class="link-muted mr-2" rel="tag" href="/tags/%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A/">分析报告</a><a class="link-muted mr-2" rel="tag" href="/tags/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/">强化学习</a><a class="link-muted mr-2" rel="tag" href="/tags/%E9%98%85%E8%AF%BB%E6%8A%A5%E5%91%8A/">阅读报告</a></div><div class="notification is-danger">You need to set <code>install_url</code> to use ShareThis. Please set it in <code>_config.yml</code>.</div></article></div><div class="card"><div class="card-content"><h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3><div class="buttons is-centered"><a class="button donate" href="https://github.com/A-Corner/a-corner.github.io" target="_blank" rel="noopener" data-type="afdian"><span class="icon is-small"><i class="fas fa-charging-station"></i></span><span>爱发电</span></a><a class="button donate" data-type="alipay"><span class="icon is-small"><i class="fab fa-alipay"></i></span><span>支付宝</span><span class="qrcode"><img src="/" alt="支付宝"></span></a><a class="button donate" href="/" target="_blank" rel="noopener" data-type="buymeacoffee"><span class="icon is-small"><i class="fas fa-coffee"></i></span><span>送我杯咖啡</span></a><a class="button donate" href="/" target="_blank" rel="noopener" data-type="patreon"><span class="icon is-small"><i class="fab fa-patreon"></i></span><span>Patreon</span></a><div class="notification is-danger">You forgot to set the <code>business</code> or <code>currency_code</code> for Paypal. Please set it in <code>_config.yml</code>.</div><a class="button donate" data-type="wechat"><span class="icon is-small"><i class="fab fa-weixin"></i></span><span>微信</span><span class="qrcode"><img src="/" alt="微信"></span></a></div></div></div><nav class="post-navigation mt-4 level is-mobile"><div class="level-end"><a class="article-nav-next level level-item link-muted" href="/2025/02/20/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8/"><span class="level-item">深度学习数学基础入门</span><i class="level-item fas fa-chevron-right"></i></a></div></nav><div class="card" id="comments"><div class="card-content"><h3 class="title is-5">评论</h3><div class="notification is-danger">You forgot to set the <code>shortname</code> for Disqus. Please set it in <code>_config.yml</code>.</div></div></div></div><div class="column column-left is-4-tablet is-4-desktop is-3-widescreen  order-1"><div class="card widget" data-type="profile"><div class="card-content"><nav class="level"><div class="level-item has-text-centered flex-shrink-1"><div><figure class="image is-128x128 mx-auto mb-2"><img class="avatar" src="/img/avatar.jpg" alt="A-Corner"></figure><p class="title is-size-4 is-block" style="line-height:inherit;">A-Corner</p><p class="is-size-6 is-block">信息的一角</p><p class="is-size-6 is-flex justify-content-center"><i class="fas fa-map-marker-alt mr-1"></i><span>China（Guangzhou）</span></p></div></div></nav><nav class="level is-mobile"><div class="level-item has-text-centered is-marginless"><div><p class="heading">文章</p><a href="/archives/"><p class="title">9</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">分类</p><a href="/categories/"><p class="title">15</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">标签</p><a href="/tags/"><p class="title">19</p></a></div></div></nav><div class="level"><a class="level-item button is-primary is-rounded" href="https://github.com/A-Corner/a-corner.github.io" target="_blank" rel="me noopener">关注我</a></div><div class="level is-mobile is-multiline"><a class="level-item button is-transparent is-marginless" target="_blank" rel="me noopener" title="Github" href="https://github.com/A-Corner/a-corner.github.io"><i class="fab fa-github"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="me noopener" title="Facebook" href="https://facebook.com"><i class="fab fa-facebook"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="me noopener" title="Twitter" href="https://twitter.com"><i class="fab fa-twitter"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="me noopener" title="Dribbble" href="https://dribbble.com"><i class="fab fa-dribbble"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="me noopener" title="RSS" href="/"><i class="fas fa-rss"></i></a></div></div></div><div class="card widget" data-type="links"><div class="card-content"><div class="menu"><h3 class="menu-label">链接</h3><ul class="menu-list"><li><a class="level is-mobile" href="https://hexo.io" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">Hexo</span></span><span class="level-right"><span class="level-item tag">hexo.io</span></span></a></li><li><a class="level is-mobile" href="https://bulma.io" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">Bulma</span></span><span class="level-right"><span class="level-item tag">bulma.io</span></span></a></li></ul></div></div></div><div class="card widget" data-type="subscribe-email"><div class="card-content"><div class="menu"><h3 class="menu-label">订阅更新</h3><form action="https://feedburner.google.com/fb/a/mailverify" method="post" target="popupwindow" onsubmit="window.open(&#039;https://feedburner.google.com/fb/a/mailverify?uri=&#039;,&#039;popupwindow&#039;,&#039;scrollbars=yes,width=550,height=520&#039;);return true"><input type="hidden" value="" name="uri"><input type="hidden" name="loc" value="en_US"><div class="field has-addons"><div class="control has-icons-left is-expanded"><input class="input" name="email" type="email" placeholder="Email"><span class="icon is-small is-left"><i class="fas fa-envelope"></i></span></div><div class="control"><input class="button" type="submit" value="订阅"></div></div></form></div></div></div><div class="card widget"><div class="card-content"><div class="notification is-danger">You need to set <code>client_id</code> and <code>slot_id</code> to show this AD unit. Please set it in <code>_config.yml</code>.</div></div></div><div class="card widget" data-type="subscribe-email"><div class="card-content"><div class="menu"><h3 class="menu-label">follow.it</h3><form action="" method="post" target="_blank"><div class="field has-addons"><div class="control has-icons-left is-expanded"><input class="input" name="email" type="email" placeholder="Email"><span class="icon is-small is-left"><i class="fas fa-envelope"></i></span></div><div class="control"><input class="button" type="submit" value="订阅"></div></div></form></div></div></div><div class="column-right-shadow is-hidden-widescreen"></div></div><div class="column column-right is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only order-3"><!--!--><div class="card widget" data-type="categories"><div class="card-content"><div class="menu"><h3 class="menu-label">分类</h3><ul class="menu-list"><li><a class="level is-mobile" href="/categories/AI/"><span class="level-start"><span class="level-item">AI</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/LLM/"><span class="level-start"><span class="level-item">LLM</span></span><span class="level-end"><span class="level-item tag">5</span></span></a></li><li><a class="level is-mobile" href="/categories/Model/"><span class="level-start"><span class="level-item">Model</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/RAG/"><span class="level-start"><span class="level-item">RAG</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A/"><span class="level-start"><span class="level-item">分析报告</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%8E%9F%E7%90%86/"><span class="level-start"><span class="level-item">原理</span></span><span class="level-end"><span class="level-item tag">6</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/"><span class="level-start"><span class="level-item">向量数据库</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%B7%A5%E5%85%B7/"><span class="level-start"><span class="level-item">工具</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/"><span class="level-start"><span class="level-item">强化学习</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%BE%AE%E8%B0%83/"><span class="level-start"><span class="level-item">微调</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E6%95%B0%E5%AD%A6/"><span class="level-start"><span class="level-item">数学</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E6%A1%86%E6%9E%B6/"><span class="level-start"><span class="level-item">框架</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/"><span class="level-start"><span class="level-item">深度学习</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E9%98%85%E8%AF%BB%E6%8A%A5%E5%91%8A/"><span class="level-start"><span class="level-item">阅读报告</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E9%A3%9F%E7%94%A8%E6%96%87%E6%A1%A3/"><span class="level-start"><span class="level-item">食用文档</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></div></div></div><div class="card widget" data-type="recent-posts"><div class="card-content"><h3 class="menu-label">最新文章</h3><article class="media"><div class="media-content"><p class="date"><time dateTime="2025-02-21T03:26:59.380Z">2025-02-21</time></p><p class="title"><a href="/2025/02/21/Michael%20Luo%20....%E9%98%85%E8%AF%BB%E6%8A%A5%E5%91%8A/">关于“DeepScaleR：通过扩展强化学习，用1.5B模型超越O1-Preview”（译文）阅读报告</a></p><p class="categories"><a href="/categories/LLM/">LLM</a> / <a href="/categories/%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A/">分析报告</a> / <a href="/categories/%E5%8E%9F%E7%90%86/">原理</a> / <a href="/categories/%E5%BE%AE%E8%B0%83/">微调</a> / <a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a> / <a href="/categories/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/">强化学习</a> / <a href="/categories/%E9%98%85%E8%AF%BB%E6%8A%A5%E5%91%8A/">阅读报告</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2025-02-20T06:44:10.490Z">2025-02-20</time></p><p class="title"><a href="/2025/02/20/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8/">深度学习数学基础入门</a></p><p class="categories"><a href="/categories/LLM/">LLM</a> / <a href="/categories/%E5%8E%9F%E7%90%86/">原理</a> / <a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a> / <a href="/categories/%E6%95%B0%E5%AD%A6/">数学</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2025-02-18T15:22:21.629Z">2025-02-18</time></p><p class="title"><a href="/2025/02/18/llm_gradient_descent/">大语言模型中的梯度值：深入理解与应用</a></p><p class="categories"><a href="/categories/LLM/">LLM</a> / <a href="/categories/%E5%8E%9F%E7%90%86/">原理</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2025-02-18T09:06:39.943Z">2025-02-18</time></p><p class="title"><a href="/2025/02/18/Embed%E6%A8%A1%E5%9E%8B%E7%A0%94%E7%A9%B6%E6%8A%A5%E5%91%8A/">Embedding 模型入门级研究报告</a></p><p class="categories"><a href="/categories/LLM/">LLM</a> / <a href="/categories/%E5%8E%9F%E7%90%86/">原理</a> / <a href="/categories/Model/">Model</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2025-02-14T16:03:29.233Z">2025-02-15</time></p><p class="title"><a href="/2025/02/15/%E7%88%AC%E8%99%AB%E6%A1%86%E6%9E%B6%E3%80%81%E8%87%AA%E5%8A%A8%E5%8C%96%E7%88%AC%E8%99%AB%E3%80%81AI%E7%88%AC%E8%99%AB%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A/">爬虫框架、自动化爬虫、AI爬虫分析报告</a></p><p class="categories"><a href="/categories/AI/">AI</a> / <a href="/categories/%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A/">分析报告</a></p></div></article></div></div><div class="card widget" data-type="archives"><div class="card-content"><div class="menu"><h3 class="menu-label">归档</h3><ul class="menu-list"><li><a class="level is-mobile" href="/archives/2025/02/"><span class="level-start"><span class="level-item">二月 2025</span></span><span class="level-end"><span class="level-item tag">9</span></span></a></li></ul></div></div></div><div class="card widget" data-type="tags"><div class="card-content"><div class="menu"><h3 class="menu-label">标签</h3><div class="field is-grouped is-grouped-multiline"><div class="control"><a class="tags has-addons" href="/tags/AI/"><span class="tag">AI</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/LLM/"><span class="tag">LLM</span><span class="tag">5</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Model/"><span class="tag">Model</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/RAG/"><span class="tag">RAG</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%85%A5%E9%97%A8/"><span class="tag">入门</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A/"><span class="tag">分析报告</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8E%9F%E7%90%86/"><span class="tag">原理</span><span class="tag">6</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/"><span class="tag">向量数据库</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%B7%A5%E5%85%B7/"><span class="tag">工具</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/"><span class="tag">强化学习</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%BE%AE%E8%B0%83/"><span class="tag">微调</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%95%B0%E5%AD%A6/"><span class="tag">数学</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%A1%86%E6%9E%B6/"><span class="tag">框架</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%A6%82%E7%8E%87/"><span class="tag">概率</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/"><span class="tag">深度学习</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%88%AC%E8%99%AB/"><span class="tag">爬虫</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%87%AA%E5%8A%A8%E5%8C%96/"><span class="tag">自动化</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E9%98%85%E8%AF%BB%E6%8A%A5%E5%91%8A/"><span class="tag">阅读报告</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E9%A3%9F%E7%94%A8%E6%96%87%E6%A1%A3/"><span class="tag">食用文档</span><span class="tag">1</span></a></div></div></div></div></div></div></div></div></section><footer class="footer"><div class="container"><div class="level"><div class="level-start"><a class="footer-logo is-block mb-2" href="/"><img src="/img/%E4%B8%80%E8%A7%92logo.png" alt="A-Acorner 信息的一角" height="28"></a><p class="is-size-7"><span>&copy; 2025 ViniJack.SJX</span>  Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a> &amp; <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a></p><p class="is-size-7">© 2025 A-Corner</p></div><div class="level-end"><div class="field has-addons"><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/A-Corner/a-corner.github.io"><i class="fab fa-github"></i></a></p></div></div></div></div></footer><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script><script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script><script>moment.locale("zh-cn");</script><script>var IcarusThemeSettings = {
+            article: {
+                highlight: {
+                    clipboard: true,
+                    fold: 'unfolded'
+                }
+            }
+        };</script><script data-pjax src="/js/column.js"></script><script src="/js/animation.js"></script><a id="back-to-top" title="回到顶端" href="javascript:;"><i class="fas fa-chevron-up"></i></a><script data-pjax src="/js/back_to_top.js" defer></script><!--!--><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.js" defer></script><script>window.addEventListener("load", () => {
+      window.cookieconsent.initialise({
+        type: "info",
+        theme: "edgeless",
+        static: false,
+        position: "bottom-left",
+        content: {
+          message: "此网站使用Cookie来改善您的体验。",
+          dismiss: "知道了！",
+          allow: "允许使用Cookie",
+          deny: "拒绝",
+          link: "了解更多",
+          policy: "Cookie政策",
+          href: "https://www.cookiesandyou.com/",
+        },
+        palette: {
+          popup: {
+            background: "#edeff5",
+            text: "#838391"
+          },
+          button: {
+            background: "#4b81e8"
+          },
+        },
+      });
+    });</script><script src="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/js/lightgallery.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/js/jquery.justifiedGallery.min.js" defer></script><script>window.addEventListener("load", () => {
+            if (typeof $.fn.lightGallery === 'function') {
+                $('.article').lightGallery({ selector: '.gallery-item' });
+            }
+            if (typeof $.fn.justifiedGallery === 'function') {
+                if ($('.justified-gallery > p > .gallery-item').length) {
+                    $('.justified-gallery > p > .gallery-item').unwrap();
+                }
+                $('.justified-gallery').justifiedGallery();
+            }
+        });</script><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js"></script><script src="/js/pjax.js"></script><!--!--><!--!--><!--!--><script data-pjax src="/js/main.js" defer></script><div class="searchbox"><div class="searchbox-container"><div class="searchbox-header"><div class="searchbox-input-container"><input class="searchbox-input" type="text" placeholder="想要查找什么..."></div><a class="searchbox-close" href="javascript:;">×</a></div><div class="searchbox-body"></div></div></div><script data-pjax src="/js/insight.js" defer></script><script data-pjax>document.addEventListener('DOMContentLoaded', function () {
+            loadInsight({"contentUrl":"/content.json"}, {"hint":"想要查找什么...","untitled":"(无标题)","posts":"文章","pages":"页面","categories":"分类","tags":"标签"});
+        });</script></body></html>
