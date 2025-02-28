@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta><title>复杂提示工程：Chain-of-Thought vs Tree-of-Thought 范式对比 - A-Acorner 信息的一角</title><link rel="manifest" href="/manifest.json"><meta name="application-name" content="A-Acorner 信息的一角"><meta name="msapplication-TileImage" content="/img/一角favicon.jpg"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="A-Acorner 信息的一角"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="description" content="复杂提示工程：Chain-of-Thought vs Tree-of-Thought 范式对比"><meta property="og:type" content="blog"><meta property="og:title" content="复杂提示工程：Chain-of-Thought vs Tree-of-Thought 范式对比"><meta property="og:url" content="http://acorner.ac.cn/2025/02/25/%E5%A4%8D%E6%9D%82%E6%8F%90%E7%A4%BA%E5%B7%A5%E7%A8%8B%EF%BC%9AChain-of-Thought%20vs%20Tree-of-Thought%20%E8%8C%83%E5%BC%8F%E5%AF%B9%E6%AF%94/"><meta property="og:site_name" content="A-Acorner 信息的一角"><meta property="og:description" content="复杂提示工程：Chain-of-Thought vs Tree-of-Thought 范式对比"><meta property="og:locale" content="zh_CN"><meta property="og:image" content="http://acorner.ac.cn/img/og_image.png"><meta property="article:published_time" content="2025-02-25T05:51:16.647Z"><meta property="article:modified_time" content="2025-02-26T06:14:02.261Z"><meta property="article:author" content="ViniJack.SJX"><meta property="article:tag" content="LLM"><meta property="article:tag" content="原理"><meta property="article:tag" content="对比分析"><meta property="article:tag" content="提示工程"><meta property="twitter:card" content="summary"><meta property="twitter:image:src" content="http://acorner.ac.cn/img/og_image.png"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"http://acorner.ac.cn/2025/02/25/%E5%A4%8D%E6%9D%82%E6%8F%90%E7%A4%BA%E5%B7%A5%E7%A8%8B%EF%BC%9AChain-of-Thought%20vs%20Tree-of-Thought%20%E8%8C%83%E5%BC%8F%E5%AF%B9%E6%AF%94/"},"headline":"复杂提示工程：Chain-of-Thought vs Tree-of-Thought 范式对比","image":["http://acorner.ac.cn/img/og_image.png"],"datePublished":"2025-02-25T05:51:16.647Z","dateModified":"2025-02-26T06:14:02.261Z","author":{"@type":"Person","name":"ViniJack.SJX"},"publisher":{"@type":"Organization","name":"A-Acorner 信息的一角","logo":{"@type":"ImageObject","url":"http://acorner.ac.cn/img/一角logo.png"}},"description":"复杂提示工程：Chain-of-Thought vs Tree-of-Thought 范式对比"}</script><link rel="canonical" href="http://acorner.ac.cn/2025/02/25/%E5%A4%8D%E6%9D%82%E6%8F%90%E7%A4%BA%E5%B7%A5%E7%A8%8B%EF%BC%9AChain-of-Thought%20vs%20Tree-of-Thought%20%E8%8C%83%E5%BC%8F%E5%AF%B9%E6%AF%94/"><link rel="icon" href="/img/%E4%B8%80%E8%A7%92favicon.jpg"><link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.0.0/css/all.css"><link data-pjax rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/atom-one-light.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600&amp;family=Roboto+Mono"><link data-pjax rel="stylesheet" href="/css/cyberpunk.css"><style>body>.footer,body>.navbar,body>.section{opacity:0}</style><!--!--><!--!--><!--!--><!--!--><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/css/lightgallery.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/css/justifiedGallery.min.css"><!--!--><!--!--><!--!--><style>.pace{-webkit-pointer-events:none;pointer-events:none;-webkit-user-select:none;-moz-user-select:none;user-select:none}.pace-inactive{display:none}.pace .pace-progress{background:#3273dc;position:fixed;z-index:2000;top:0;right:100%;width:100%;height:2px}</style><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><!--!--><!--!--><!-- hexo injector head_end start --><script>
+  (function () {
+      function switchTab() {
+          if (!location.hash) {
+            return;
+          }
+
+          const id = '#' + CSS.escape(location.hash.substring(1));
+          const $tabMenu = document.querySelector(`.tabs a[href="${id}"]`);
+          if (!$tabMenu) {
+            return;
+          }
+
+          const $tabMenuContainer = $tabMenu.parentElement.parentElement;
+          Array.from($tabMenuContainer.children).forEach($menu => $menu.classList.remove('is-active'));
+          Array.from($tabMenuContainer.querySelectorAll('a'))
+              .map($menu => document.getElementById($menu.getAttribute("href").substring(1)))
+              .forEach($content => $content.classList.add('is-hidden'));
+
+          if ($tabMenu) {
+              $tabMenu.parentElement.classList.add('is-active');
+          }
+          const $activeTab = document.querySelector(id);
+          if ($activeTab) {
+              $activeTab.classList.remove('is-hidden');
+          }
+      }
+      switchTab();
+      window.addEventListener('hashchange', switchTab, false);
+  })();
+  </script><!-- hexo injector head_end end --><meta name="generator" content="Hexo 7.3.0"></head><body class="is-3-column"><nav class="navbar navbar-main"><div class="container navbar-container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/"><img src="/img/%E4%B8%80%E8%A7%92logo.png" alt="A-Acorner 信息的一角" height="28"></a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">Home</a><a class="navbar-item" href="/archives">Archives</a><a class="navbar-item" href="/categories">Categories</a><a class="navbar-item" href="/tags">Tags</a><a class="navbar-item" href="/about">About</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/A-Corner/a-corner.github.io"><i class="fab fa-github"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-6-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time dateTime="2025-02-25T05:51:16.647Z" title="2025/2/25 13:51:16">2025-02-25</time>发表</span><span class="level-item"><time dateTime="2025-02-26T06:14:02.261Z" title="2025/2/26 14:14:02">2025-02-26</time>更新</span><span class="level-item"><a class="link-muted" href="/categories/LLM/">LLM</a><span> / </span><a class="link-muted" href="/categories/%E5%8E%9F%E7%90%86/">原理</a><span> / </span><a class="link-muted" href="/categories/%E5%AF%B9%E6%AF%94%E5%88%86%E6%9E%90/">对比分析</a><span> / </span><a class="link-muted" href="/categories/%E6%8F%90%E7%A4%BA%E5%B7%A5%E7%A8%8B/">提示工程</a></span><span class="level-item">1 小时读完 (大约7287个字)</span></div></div><h1 class="title is-3 is-size-4-mobile">复杂提示工程：Chain-of-Thought vs Tree-of-Thought 范式对比</h1><div class="content"><h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>近年来，大型语言模型 (LLM) 在自然语言处理领域取得了显著的进展，展现出强大的文本生成和理解能力 。然而，在面对需要多步推理的复杂任务时，LLM 往往表现不佳 。为了解决这个问题，研究人员提出了<strong>提示工程</strong>技术，旨在通过设计和优化提示来引导 LLM 生成更准确、更符合预期结果的输出 。提示工程在提高 LLM 性能方面发挥着至关重要的作用，它可以帮助 LLM 更好地理解任务要求、克服推理缺陷，并生成更具逻辑性和连贯性的文本。</p>
+<p>在众多提示工程技术中，Chain-of-Thought (CoT) 和 Tree-of-Thought (ToT) 是两种备受关注的范式。它们模拟了人类解决问题的认知过程，通过将复杂任务分解成一系列中间步骤来引导 LLM 进行推理。CoT 采用线性推理的方式，而 ToT 则允许 LLM 探索多个推理路径，类似于决策树。</p>
+<p>本文将深入探讨 CoT 和 ToT 的定义、原理、优缺点、应用场景以及未来发展趋势，并对两者进行对比分析，帮助读者更好地理解和应用这些技术。</p>
+<span id="more"></span>
+
+<h2 id="Chain-of-Thought-CoT"><a href="#Chain-of-Thought-CoT" class="headerlink" title="Chain-of-Thought (CoT)"></a>Chain-of-Thought (CoT)</h2><h3 id="定义和原理"><a href="#定义和原理" class="headerlink" title="定义和原理"></a>定义和原理</h3><p>CoT 是一种提示工程技术，旨在引导 LLM 将复杂任务分解为一系列中间推理步骤，并以自然语言的形式表达出来。Wei 等人 (2022) 在他们的研究中首次提出了 CoT 技术 ，并证明了 CoT 可以显著提高 LLM 在各种推理任务上的性能。CoT 的核心思想是通过提供一些包含推理步骤的示例，让 LLM 学习如何进行多步推理 。</p>
+<p>CoT 的历史渊源可以追溯到认知科学和心理学领域对人类认知过程的早期探索 1。通过深入研究和分析人类如何思考和解决问题，并将这些发现应用于人工智能领域，CoT 技术应运而生，并逐渐成为提升 LLM 推理能力的重要手段。</p>
+<p>除了基本的 CoT 提示方法外，还有一种名为“自洽性”的 CoT 变体 。自洽性提示通过生成多个推理路径，并选择最一致的路径来提高 LLM 在推理任务中的准确性和可靠性 7。</p>
+<h3 id="优缺点"><a href="#优缺点" class="headerlink" title="优缺点"></a>优缺点</h3><p><strong>优点：</strong></p>
+<ul>
+<li><strong>提高推理能力：</strong> CoT 可以显著提高 LLM 在复杂推理任务上的性能，例如算术推理、常识推理和符号推理 。</li>
+<li><strong>增强可解释性：</strong> CoT 可以使 LLM 的推理过程更加透明，方便用户理解模型是如何得出结论的 。</li>
+<li><strong>易于实现：</strong> CoT 的实现相对简单，只需在提示中添加一些包含推理步骤的示例即可 。</li>
+</ul>
+<p><strong>缺点：</strong></p>
+<ul>
+<li><strong>依赖模型规模：</strong> CoT 通常需要较大的 LLM 才能有效发挥作用，较小的模型可能难以生成清晰的推理步骤 。</li>
+<li><strong>推理不一致：</strong> 有时 LLM 生成的推理步骤与其最终答案并不一致，导致用户难以信任模型的结论 。这也被称为 CoT 推理的“不忠实性”现象 。</li>
+<li><strong>响应速度较慢：</strong> CoT 需要 LLM 生成多个推理步骤，因此响应速度可能比直接生成答案的方法慢 。</li>
+<li><strong>过度思考简单问题：</strong> 对于简单问题，CoT 可能会使问题变得过于复杂 。</li>
+<li><strong>需要高质量的提示：</strong> CoT 的效果很大程度上取决于提示的质量，如果提示不够清晰或有效，可能会导致推理错误 。此外，CoT 提示的“粒度”也会影响模型的性能 。更具体地说，更广泛和通用的提示可以应用于更多问题，但可能需要更多的人工提示设计；而更具体的提示在狭窄的任务集上表现更好，但泛化能力较差。</li>
+</ul>
+<h3 id="应用场景"><a href="#应用场景" class="headerlink" title="应用场景"></a>应用场景</h3><p>CoT 可以应用于各种需要推理的场景，例如：</p>
+<ul>
+<li><p><strong>算术推理：</strong> 解决数学应用题，例如：</p>
+<blockquote>
+<p>问题：小明有 5 个苹果，小红有 3 个苹果，他们一共有多少个苹果？</p>
+<p>推理步骤：</p>
+<ol>
+<li>小明有 5 个苹果。</li>
+<li>小红有 3 个苹果。</li>
+<li>将小明和小红的苹果数量相加：5 + 3 &#x3D; 8</li>
+<li>所以，他们一共有 8 个苹果。</li>
+</ol>
+<p>答案：8 9</p>
+</blockquote>
+</li>
+<li><p><strong>常识推理：</strong> 回答需要常识的问题，例如：</p>
+<blockquote>
+<p>问题：鸟会在哪里筑巢？</p>
+<p>推理步骤：</p>
+<ol>
+<li>鸟需要一个安全的地方来产卵和抚养幼鸟。</li>
+<li>树木提供了一个远离捕食者的位置。</li>
+<li>因此，鸟类通常在树上筑巢。</li>
+</ol>
+<p>答案：树上 9</p>
+</blockquote>
+</li>
+<li><p><strong>符号推理：</strong> 解决逻辑谜题或代数问题，例如：</p>
+<blockquote>
+<p>问题：如果 a &#x3D; 2，b &#x3D; 3，那么 a + b &#x3D; ？</p>
+<p>推理步骤：</p>
+<ol>
+<li>a &#x3D; 2</li>
+<li>b &#x3D; 3</li>
+<li>将 a 和 b 的值代入表达式：2 + 3 &#x3D; 5</li>
+</ol>
+<p>答案：5 9</p>
+</blockquote>
+</li>
+<li><p><strong>问答系统：</strong> 回答需要多跳推理的问题，例如：</p>
+<blockquote>
+<p>问题：谁是法国总统的妻子？</p>
+<p>推理步骤：</p>
+<ol>
+<li>首先需要知道谁是法国总统。</li>
+<li>然后查找法国总统的配偶信息。</li>
+</ol>
+<p>答案：布丽吉特·马克龙 9</p>
+</blockquote>
+</li>
+<li><p><strong>客户服务：</strong> 帮助聊天机器人理解和解决复杂的用户问题 。例如，一个用户询问如何重置密码，聊天机器人可以使用 CoT 来引导用户完成密码重置的步骤。</p>
+</li>
+<li><p><strong>医疗保健：</strong> 辅助医生进行诊断 。例如，根据病人的症状和病史，LLM 可以使用 CoT 推理出可能的疾病，并提供相应的治疗建议。</p>
+</li>
+<li><p><strong>金融：</strong> 进行风险评估 。例如，LLM 可以分析公司的财务状况和市场环境，并使用 CoT 来评估投资风险。</p>
+</li>
+<li><p><strong>法律：</strong> 分析案例和制定法律论证 。例如，LLM 可以根据案件事实和相关法律条文，使用 CoT 来进行法律分析，并提供可能的判决结果。</p>
+</li>
+<li><p><strong>教育：</strong> 帮助学生学习解决问题的方法 。例如，在数学教学中，可以使用 CoT 来引导学生逐步解决数学问题，并理解解题思路。</p>
+</li>
+<li><p><strong>科研：</strong> 帮助研究人员分析数据和检验假设 。例如，LLM 可以分析实验数据，并使用 CoT 来推断实验结果的意义。</p>
+</li>
+</ul>
+<p>需要注意的是，评估 CoT 的效果存在一些挑战 。现有的基准测试数据集，例如 GSM8K 和 CommonSense QA，存在规模难以扩展和数据泄露的风险，这使得难以准确评估 CoT 的泛化能力。</p>
+<h2 id="Tree-of-Thought-ToT"><a href="#Tree-of-Thought-ToT" class="headerlink" title="Tree-of-Thought (ToT)"></a>Tree-of-Thought (ToT)</h2><h3 id="定义和原理-1"><a href="#定义和原理-1" class="headerlink" title="定义和原理"></a>定义和原理</h3><p>ToT 是一种更高级的推理框架，它扩展了 CoT 的概念，允许 LLM 不仅可以进行线性推理，还可以探索多个推理路径，类似于决策树 。Yao 等人 (2023) 在他们的研究中首次提出了 ToT 框架 ，并展示了 ToT 在解决复杂问题方面的优势。ToT 的核心思想是将问题分解为一系列中间决策步骤，并在每个步骤中生成多个可能的解决方案，然后评估这些方案并选择最佳路径 。</p>
+<h3 id="思想分解"><a href="#思想分解" class="headerlink" title="思想分解"></a>思想分解</h3><p>ToT 框架中的一个关键步骤是“思想分解” 。思想分解是指将问题分解成更小、更易于管理的步骤，称为“思想”。每个思想都应该是适当的规模——既不能太大而难以处理，也不能太小而没有用处。例如，在计划旅行时，一个思想可能是先决定旅行目的地，然后选择最佳交通方式，最后选择住宿地点。在数学问题中，一个思想可能是一个单独的方程式或一个简明的概念解释。</p>
+<h3 id="思想生成"><a href="#思想生成" class="headerlink" title="思想生成"></a>思想生成</h3><p>在定义了什么是思想之后，下一步是确定如何生成这些思想 。ToT 框架提出了两种主要的思想生成技术：</p>
+<ul>
+<li><strong>采样：</strong> 这种技术涉及通过使用相同的提示独立地生成多个思想。当思想空间丰富多样时，这种方法效果最佳，因为独立生成的思想不太可能重复。例如，在创意写作中，可能会生成多个独立的情节想法。</li>
+<li><strong>提议：</strong> 这种技术使用“提议提示”顺序生成思想。每个思想都建立在前一个思想的基础上，这有助于在更受限的思想空间中避免重复。例如，在逻辑问题解决中，每个步骤都建立在前一个步骤的基础上，以帮助确保一致性和进展。</li>
+</ul>
+<h3 id="思想评估"><a href="#思想评估" class="headerlink" title="思想评估"></a>思想评估</h3><p>ToT 框架中的另一个重要步骤是“思想评估” 。在每个决策步骤中，LLM 需要评估生成的多个思想，并选择最有希望的路径继续推理。思想评估可以通过多种方式进行，例如：</p>
+<ul>
+<li><strong>使用启发式方法：</strong> 根据一些预定义的规则或标准来评估思想的质量。</li>
+<li><strong>使用价值函数：</strong> 为每个思想分配一个数值分数，表示其潜在价值。这种方法允许对每个思想的潜力进行定量评估。</li>
+</ul>
+<h3 id="搜索策略"><a href="#搜索策略" class="headerlink" title="搜索策略"></a>搜索策略</h3><p>ToT 框架可以使用不同的搜索策略来探索推理路径，例如：</p>
+<ul>
+<li><strong>广度优先搜索 (BFS)：</strong> 在深入到下一层节点之前，先扩展当前层的所有节点。这种策略可以确保 LLM 探索所有可能的推理路径，但可能会导致计算量较大。</li>
+<li><strong>深度优先搜索 (DFS)：</strong> 优先深入到某个推理路径，直到达到最终答案或遇到死胡同，然后再回溯到其他路径。这种策略可以更快地找到解决方案，但可能会错过一些潜在的最佳路径。</li>
+</ul>
+<h3 id="优缺点-1"><a href="#优缺点-1" class="headerlink" title="优缺点"></a>优缺点</h3><p><strong>优点：</strong></p>
+<ul>
+<li><strong>增强决策能力：</strong> ToT 可以帮助 LLM 在面对复杂问题时进行更全面的思考，并做出更合理的决策 。</li>
+<li><strong>提高解决问题的能力：</strong> ToT 可以使 LLM 更有效地解决需要多变量分析和决策的问题 。</li>
+<li><strong>处理不确定性：</strong> ToT 可以通过量化和管理不确定性来提高决策的准确性和可靠性 。例如，“不确定思想树 (TouT)”是 ToT 的一个扩展，它通过整合不确定性量化机制来评估每个决策路径的可靠性。TouT 使用的技术包括蒙特卡洛 dropout，这是一种用于估计预测不确定性的机器学习技术。</li>
+</ul>
+<p><strong>缺点：</strong></p>
+<ul>
+<li><strong>计算量大：</strong> ToT 需要 LLM 评估多个推理路径，因此计算量比 CoT 更大 。</li>
+<li><strong>容易过拟合：</strong> ToT 可能会导致 LLM 过于关注某个推理分支，而忽略了全局信息 。</li>
+<li><strong>目标错位：</strong> LLM 选择的解决方案可能与实际目标不一致 。</li>
+</ul>
+<h3 id="应用场景-1"><a href="#应用场景-1" class="headerlink" title="应用场景"></a>应用场景</h3><p>ToT 适用于需要探索多个解决方案和进行决策的场景，例如：</p>
+<ul>
+<li><strong>策略规划：</strong> 探索不同的商业决策方案 。例如，一家公司可以使用 ToT 来评估不同的市场进入策略，或制定新的产品开发计划。</li>
+<li><strong>游戏 AI：</strong> 在复杂游戏中寻找最佳策略 。例如，在围棋或象棋等游戏中，ToT 可以帮助 AI 探索不同的落子方案，并选择最佳策略。</li>
+<li><strong>创意写作：</strong> 生成和比较不同的创意想法 。例如，作家可以使用 ToT 来探索不同的情节发展或人物设定，并创作出更具创意的故事。</li>
+<li><strong>数独求解：</strong> 探索不同的数字放置方案 。</li>
+<li><strong>24 点游戏：</strong> 探索不同的计算路径 。</li>
+<li><strong>填字游戏：</strong> 考虑不同的单词选项 。</li>
+<li><strong>强化学习：</strong> ToT 的层次结构使其适用于需要详细探索多个解决方案的任务，例如强化学习场景，其中回溯和替代策略至关重要 。</li>
+</ul>
+<h2 id="CoT-与-ToT-的区别和联系"><a href="#CoT-与-ToT-的区别和联系" class="headerlink" title="CoT 与 ToT 的区别和联系"></a>CoT 与 ToT 的区别和联系</h2><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>特性</strong></td>
+<td><strong>Chain-of-Thought (CoT)</strong></td>
+<td><strong>Tree-of-Thought (ToT)</strong></td>
+</tr>
+<tr>
+<td>推理结构</td>
+<td>线性</td>
+<td>树形</td>
+</tr>
+<tr>
+<td>探索路径</td>
+<td>单一</td>
+<td>多条</td>
+</tr>
+<tr>
+<td>决策能力</td>
+<td>较弱</td>
+<td>较强</td>
+</tr>
+<tr>
+<td>计算量</td>
+<td>较小</td>
+<td>较大</td>
+</tr>
+<tr>
+<td>应用场景</td>
+<td>需要逐步推理的任务</td>
+<td>需要探索多个解决方案和进行决策的任务</td>
+</tr>
+<tr>
+<td>处理不确定性</td>
+<td>无法处理</td>
+<td>可以处理 (例如 TouT)</td>
+</tr>
+<tr>
+<td>对提示质量的依赖</td>
+<td>高度依赖</td>
+<td>依赖程度较低</td>
+</tr>
+</tbody></table>
+<p>CoT 和 ToT 都是为了提高 LLM 推理能力而提出的提示工程技术，它们之间存在着联系：</p>
+<ul>
+<li>ToT 可以看作是 CoT 的扩展，它将 CoT 的线性推理扩展到树形推理，从而可以探索更多的可能性。</li>
+<li>CoT 可以作为 ToT 的基础，ToT 中的每个推理路径都可以看作是一个 CoT。</li>
+</ul>
+<p><strong>关键区别：</strong></p>
+<ul>
+<li><strong>推理结构：</strong> CoT 采用线性推理结构，而 ToT 采用树形推理结构。</li>
+<li><strong>探索路径：</strong> CoT 遵循单一推理路径，而 ToT 可以探索多条推理路径。</li>
+<li><strong>决策能力：</strong> ToT 比 CoT 具有更强的决策能力，因为它可以评估多个解决方案并选择最佳路径。</li>
+<li><strong>计算量：</strong> ToT 的计算量通常比 CoT 大，因为它需要评估多个推理路径。</li>
+<li><strong>应用场景：</strong> CoT 适用于需要逐步推理的任务，而 ToT 适用于需要探索多个解决方案和进行决策的任务。</li>
+</ul>
+<h2 id="CoT-和-ToT-的未来发展趋势"><a href="#CoT-和-ToT-的未来发展趋势" class="headerlink" title="CoT 和 ToT 的未来发展趋势"></a>CoT 和 ToT 的未来发展趋势</h2><h3 id="Chain-of-Thought-CoT-1"><a href="#Chain-of-Thought-CoT-1" class="headerlink" title="Chain-of-Thought (CoT)"></a>Chain-of-Thought (CoT)</h3><ul>
+<li><strong>与其他技术的结合：</strong> CoT 可以与其他技术结合，例如检索增强生成 (RAG)  和多模态推理 ，从而进一步提高 LLM 的推理能力。例如，在多模态 CoT 中，LLM 可以结合文本和图像信息来进行推理，从而更好地理解和解决问题。</li>
+<li><strong>自动化：</strong> 研究人员正在探索如何自动化 CoT 的过程，例如自动生成推理步骤和评估方案，从而降低使用门槛 。</li>
+<li><strong>应用领域拓展：</strong> CoT 将被应用于更广泛的领域，例如机器人、自动驾驶和科学发现 。</li>
+<li><strong>潜在推理：</strong> CoT 的未来发展趋势之一是潜在推理 。潜在推理是指 LLM 不再局限于使用自然语言来表达推理过程，而是直接在模型的隐藏状态空间中进行推理。这种方法可以提高推理效率，并使 LLM 能够处理更复杂的问题。</li>
+<li><strong>多智能体链：</strong> CoT 的另一个发展趋势是多智能体链 。多智能体链是指将推理任务分配给多个专门的 LLM，并让它们协作完成推理过程。这种方法可以充分利用不同 LLM 的优势，并提高整体推理性能。</li>
+</ul>
+<h3 id="Tree-of-Thought-ToT-1"><a href="#Tree-of-Thought-ToT-1" class="headerlink" title="Tree-of-Thought (ToT)"></a>Tree-of-Thought (ToT)</h3><ul>
+<li><strong>与其他技术的结合：</strong> ToT 可以与其他技术结合，例如强化学习，从而进一步提高 LLM 的决策能力 。</li>
+<li><strong>自动化：</strong> 研究人员正在探索如何自动化 ToT 的过程，例如自动生成思想、评估方案和选择最佳路径，从而提高效率和降低使用门槛。</li>
+<li><strong>应用领域拓展：</strong> ToT 将被应用于更广泛的领域，例如复杂决策、风险管理和科学研究。</li>
+<li><strong>不确定性量化：</strong> ToT 的一个重要发展方向是“不确定思想树 (TouT)” 。TouT 通过整合不确定性量化机制来评估每个决策路径的可靠性，从而提高决策的准确性和可靠性。</li>
+<li><strong>全局决策：</strong> ToT 的另一个发展方向是增强 LLM 的全局决策能力 。最近的研究将反馈循环引入 ToT 框架，允许模型从过去的决策中学习并在实时调整其推理过程。这种迭代反馈机制有助于改进决策过程，使其更具动态性和对问题不断变化的环境的响应能力。</li>
+</ul>
+<h2 id="对-CoT-和-ToT-的深入分析"><a href="#对-CoT-和-ToT-的深入分析" class="headerlink" title="对 CoT 和 ToT 的深入分析"></a>对 CoT 和 ToT 的深入分析</h2><p>CoT 和 ToT 都是强大的提示工程技术，它们显著提高了 LLM 的推理能力。CoT 由于其线性结构，更易于实现，并且在处理简单到中等复杂度的任务时表现良好。它通过提供逐步的推理路径，增强了模型的可解释性和透明度，使用户更容易理解模型是如何得出结论的。然而，CoT 的局限性在于其线性结构限制了模型探索替代解决方案的能力，使其在处理高度复杂或需要考虑多种因素的问题时效率较低。</p>
+<p>相比之下，ToT 采用树形结构，允许模型探索多个推理路径，并在每个步骤中评估不同的解决方案。这种方法更接近人类解决问题的方式，使模型能够进行更深入的分析和更全面的思考。ToT 在处理复杂问题、进行战略规划和生成创意内容方面表现出强大的能力。然而，ToT 的缺点在于其计算量较大，需要更多的资源和时间来处理多个推理路径。</p>
+<p>总而言之，CoT 和 ToT 各有优缺点，选择哪种技术取决于具体的任务需求和可用资源。对于需要逐步推理的简单任务，CoT 是一个不错的选择。而对于需要探索多个解决方案和进行决策的复杂任务，ToT 则更具优势。</p>
+<p>CoT 和 ToT 是两种重要的提示工程技术，它们可以显著提高 LLM 的推理能力。CoT 适用于需要逐步推理的任务，而 ToT 适用于需要探索多个解决方案和进行决策的任务。随着技术的不断发展，CoT 和 ToT 将在更广泛的领域发挥作用，并推动 LLM 朝着更智能、更类人的方向发展 。未来的 LLM 将能够更好地理解人类的语言和思维方式，并帮助我们解决更复杂的问题，例如自动编程、药物研发和科学发现。CoT 和 ToT 的发展将加速这一进程，并最终使 LLM 成为我们日常生活和工作中不可或缺的助手。</p>
+<p>此外，值得注意的是，CoT 和 ToT 的发展也促进了更小型、更高效的 LLM 的出现 。这些小型 LLM 可以达到与大型模型相媲美的性能，这将降低使用 LLM 的门槛，并使其更容易被应用于各种场景。</p>
+<h1 id="如何在微调中应用-CoT-和-ToT？"><a href="#如何在微调中应用-CoT-和-ToT？" class="headerlink" title="如何在微调中应用 CoT 和 ToT？"></a>如何在微调中应用 CoT 和 ToT？</h1><h2 id="CoT-在微调中的应用"><a href="#CoT-在微调中的应用" class="headerlink" title="CoT 在微调中的应用"></a>CoT 在微调中的应用</h2><p>CoT 可以通过以下方式应用于微调：</p>
+<p><strong>1. 数据增强:</strong> 使用 CoT 生成推理步骤，并将这些步骤添加到微调数据集中，可以增强数据集的多样性和信息量，从而提高模型的推理能力 1。例如，在数学问题求解任务中，可以将 CoT 生成的中间步骤添加到每个问题中，使模型学习如何逐步解决问题。</p>
+<p><strong>2. 教师模型:</strong> 使用大型 LLM 作为教师模型，生成 CoT 推理步骤，然后用这些步骤来指导较小模型的微调 2。这种方法可以将大型模型的推理能力迁移到较小模型，从而降低计算成本和部署难度。</p>
+<p><strong>3. 多模态 CoT:</strong> 将 CoT 与多模态信息相结合，例如图像和文本，可以提高模型在多模态任务中的推理能力 2。例如，在视觉问答任务中，可以使用 CoT 来引导模型结合图像和文本信息进行推理，从而更准确地回答问题。</p>
+<p><strong>4. 提示模板:</strong> 在微调过程中，可以使用 CoT 提示模板来引导模型生成推理步骤 3。例如，可以使用 “思考过程：” 作为提示，引导模型在回答问题之前生成推理步骤。</p>
+<h2 id="ToT-在微调中的应用"><a href="#ToT-在微调中的应用" class="headerlink" title="ToT 在微调中的应用"></a>ToT 在微调中的应用</h2><p>ToT 可以通过以下方式应用于微调：</p>
+<p><strong>1. 决策树学习:</strong> 将 ToT 框架融入模型的微调过程中，可以使模型学习如何构建决策树并进行多路径推理 4。例如，在游戏 AI 中，可以使用 ToT 来训练模型探索不同的游戏策略，并选择最佳方案。</p>
+<p><strong>2. 多智能体微调:</strong> 将 ToT 与多智能体系统相结合，可以训练多个 LLM 协作完成复杂任务 5。例如，在自动驾驶中，可以使用 ToT 来训练多个 LLM 分别负责感知、规划和控制，从而提高自动驾驶的安全性。</p>
+<p><strong>3. 强化学习:</strong> 将 ToT 与强化学习相结合，可以训练 LLM 在复杂环境中进行决策和规划 4。例如，在机器人控制中，可以使用 ToT 来训练 LLM 控制机器人在复杂环境中完成任务。</p>
+<h2 id="优势和挑战"><a href="#优势和挑战" class="headerlink" title="优势和挑战"></a>优势和挑战</h2><p>在微调中应用 CoT 和 ToT 可以带来以下优势：</p>
+<ul>
+<li><strong>提高推理能力:</strong> CoT 和 ToT 可以引导模型进行更深入的推理，从而提高模型在复杂任务上的性能。</li>
+<li><strong>增强决策能力:</strong> ToT 可以使模型学习如何进行多路径推理和决策，从而提高模型在复杂决策问题上的性能。</li>
+<li><strong>提高可解释性:</strong> CoT 和 ToT 可以使模型的推理过程更加透明，从而提高模型的可解释性。</li>
+</ul>
+<p>然而，在微调中应用 CoT 和 ToT 也面临一些挑战：</p>
+<ul>
+<li><strong>计算成本:</strong> CoT 和 ToT 的计算成本较高，尤其是在 ToT 中，模型需要探索多个推理路径。</li>
+<li><strong>数据需求:</strong> CoT 和 ToT 需要大量的训练数据，尤其是包含推理步骤的数据。</li>
+<li><strong>评估指标:</strong> 目前缺乏有效的评估指标来衡量 CoT 和 ToT 在微调中的效果。</li>
+</ul>
+<h1 id="主要应用场景及优缺点对比"><a href="#主要应用场景及优缺点对比" class="headerlink" title="主要应用场景及优缺点对比"></a>主要应用场景及优缺点对比</h1><h2 id="主要应用场景"><a href="#主要应用场景" class="headerlink" title="主要应用场景"></a>主要应用场景</h2><p><strong>Chain-of-Thought (CoT)</strong> 适用于需要逐步推理的任务，例如：</p>
+<ul>
+<li><strong>算术推理:</strong> 解决数学应用题，例如逐步解决加法、减法、乘法和除法问题。</li>
+<li><strong>常识推理:</strong> 回答需要常识的问题，例如解释为什么天空是蓝色的。</li>
+<li><strong>符号推理:</strong> 解决逻辑谜题或代数问题，例如最后一个字母连接或抛硬币。</li>
+<li><strong>问答系统:</strong> 回答需要多跳推理的问题，例如需要从多个来源收集信息的问题。</li>
+</ul>
+<p><strong>Tree-of-Thought (ToT)</strong> 适用于需要探索多个解决方案和进行决策的场景，例如：</p>
+<ul>
+<li><strong>策略规划:</strong> 探索不同的商业决策方案，例如评估不同的市场进入策略。</li>
+<li><strong>游戏 AI:</strong> 在复杂游戏中寻找最佳策略，例如在国际象棋或围棋等游戏中探索不同的落子方案。</li>
+<li><strong>创意写作:</strong> 生成和比较不同的创意想法，例如探索不同的情节发展或人物设定。</li>
+<li><strong>解决难题:</strong> 解决数独、24 点游戏和填字游戏等难题。</li>
+</ul>
+<h2 id="与其他优化技术的对比"><a href="#与其他优化技术的对比" class="headerlink" title="与其他优化技术的对比"></a>与其他优化技术的对比</h2><p>CoT 和 ToT 与其他 LLM 优化技术相比，具有以下优点：</p>
+<ul>
+<li><strong>提高推理能力:</strong> CoT 和 ToT 可以引导模型进行更深入的推理，从而提高模型在复杂任务上的性能。</li>
+<li><strong>增强决策能力:</strong> ToT 可以使模型学习如何进行多路径推理和决策，从而提高模型在复杂决策问题上的性能。</li>
+<li><strong>提高可解释性:</strong> CoT 和 ToT 可以使模型的推理过程更加透明，从而提高模型的可解释性。</li>
+</ul>
+<p>CoT 和 ToT 也存在一些缺点：</p>
+<ul>
+<li><strong>计算成本:</strong> CoT 和 ToT 的计算成本较高，尤其是在 ToT 中，模型需要探索多个推理路径。</li>
+<li><strong>数据需求:</strong> CoT 和 ToT 需要大量的训练数据，尤其是包含推理步骤的数据。</li>
+<li><strong>评估指标:</strong> 目前缺乏有效的评估指标来衡量 CoT 和 ToT 的效果。</li>
+</ul>
+<p><strong>免责声明</strong></p>
+<p>本报告（“一篇“<strong>神经网络中的反向传播</strong>”引发的学习血案”）由[ViniJack.SJX] 根据公开可获得的信息以及作者的专业知识和经验撰写，旨在提供关于原理、技术、相关框架和工具的分析和信息。</p>
+<p><strong>1. 信息准确性与完整性：</strong></p>
+<ul>
+<li><p>作者已尽最大努力确保报告中信息的准确性和完整性，但不对其绝对准确性、完整性或及时性做出任何明示或暗示的保证。</p>
+</li>
+<li><p>报告中的信息可能随时间推移而发生变化，作者不承担更新报告内容的义务。</p>
+</li>
+<li><p>报告中引用的第三方信息（包括但不限于网站链接、项目描述、数据统计等）均来自公开渠道，作者不对其真实性、准确性或合法性负责。</p>
+</li>
+</ul>
+<p><strong>2. 报告用途与责任限制：</strong></p>
+<ul>
+<li><p>本报告仅供参考和学习之用，不构成任何形式的投资建议、技术建议、法律建议或其他专业建议。</p>
+</li>
+<li><p>读者应自行判断和评估报告中的信息，并根据自身情况做出决策。</p>
+</li>
+<li><p>对于因使用或依赖本报告中的信息而导致的任何直接或间接损失、损害或不利后果，作者不承担任何责任。</p>
+</li>
+</ul>
+<p><strong>3. 技术使用与合规性：</strong></p>
+<ul>
+<li><p>本报告中提及的任何爬虫框架、工具或技术，读者应自行负责其合法合规使用。</p>
+</li>
+<li><p>在使用任何爬虫技术时，读者应遵守相关法律法规（包括但不限于数据隐私保护法、知识产权法、网络安全法等），尊重网站的服务条款和robots协议，不得侵犯他人合法权益。</p>
+</li>
+<li><p>对于因读者违反相关法律法规或不当使用爬虫技术而导致的任何法律责任或纠纷，作者不承担任何责任。</p>
+</li>
+</ul>
+<p><strong>4. 知识产权：</strong></p>
+<ul>
+<li><p>本报告的版权归作者所有，未经作者书面许可，任何人不得以任何形式复制、传播、修改或使用本报告的全部或部分内容。</p>
+</li>
+<li><p>报告中引用的第三方内容，其知识产权归原作者所有。</p>
+</li>
+</ul>
+<p><strong>5. 其他：</strong></p>
+<ul>
+<li><p>本报告可能包含对未来趋势的预测，这些预测基于作者的判断和假设，不构成任何形式的保证。</p>
+</li>
+<li><p>作者保留随时修改本免责声明的权利。</p>
+</li>
+</ul>
+<p><strong>请在使用本报告前仔细阅读并理解本免责声明。如果您不同意本免责声明的任何条款，请勿使用本报告。</strong></p>
+</div><div class="article-licensing box"><div class="licensing-title"><p>复杂提示工程：Chain-of-Thought vs Tree-of-Thought 范式对比</p><p><a href="http://acorner.ac.cn/2025/02/25/复杂提示工程：Chain-of-Thought vs Tree-of-Thought 范式对比/">http://acorner.ac.cn/2025/02/25/复杂提示工程：Chain-of-Thought vs Tree-of-Thought 范式对比/</a></p></div><div class="licensing-meta level is-mobile"><div class="level-left"><div class="level-item is-narrow"><div><h6>作者</h6><p>ViniJack.SJX</p></div></div><div class="level-item is-narrow"><div><h6>发布于</h6><p>2025-02-25</p></div></div><div class="level-item is-narrow"><div><h6>更新于</h6><p>2025-02-26</p></div></div><div class="level-item is-narrow"><div><h6>许可协议</h6><p><a class="icons" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="icon fab fa-creative-commons"></i></a><a class="icons" rel="noopener" target="_blank" title="Attribution" href="https://creativecommons.org/licenses/by/4.0/"><i class="icon fab fa-creative-commons-by"></i></a><a class="icons" rel="noopener" target="_blank" title="Noncommercial" href="https://creativecommons.org/licenses/by-nc/4.0/"><i class="icon fab fa-creative-commons-nc"></i></a></p></div></div></div></div></div><div class="article-tags is-size-7 mb-4"><span class="mr-2">#</span><a class="link-muted mr-2" rel="tag" href="/tags/LLM/">LLM</a><a class="link-muted mr-2" rel="tag" href="/tags/%E5%8E%9F%E7%90%86/">原理</a><a class="link-muted mr-2" rel="tag" href="/tags/%E5%AF%B9%E6%AF%94%E5%88%86%E6%9E%90/">对比分析</a><a class="link-muted mr-2" rel="tag" href="/tags/%E6%8F%90%E7%A4%BA%E5%B7%A5%E7%A8%8B/">提示工程</a></div><div class="notification is-danger">You need to set <code>install_url</code> to use ShareThis. Please set it in <code>_config.yml</code>.</div></article></div><div class="card"><div class="card-content"><h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3><div class="buttons is-centered"><a class="button donate" href="https://github.com/A-Corner/a-corner.github.io" target="_blank" rel="noopener" data-type="afdian"><span class="icon is-small"><i class="fas fa-charging-station"></i></span><span>爱发电</span></a><a class="button donate" data-type="alipay"><span class="icon is-small"><i class="fab fa-alipay"></i></span><span>支付宝</span><span class="qrcode"><img src="/" alt="支付宝"></span></a><a class="button donate" href="/" target="_blank" rel="noopener" data-type="buymeacoffee"><span class="icon is-small"><i class="fas fa-coffee"></i></span><span>送我杯咖啡</span></a><a class="button donate" href="/" target="_blank" rel="noopener" data-type="patreon"><span class="icon is-small"><i class="fab fa-patreon"></i></span><span>Patreon</span></a><div class="notification is-danger">You forgot to set the <code>business</code> or <code>currency_code</code> for Paypal. Please set it in <code>_config.yml</code>.</div><a class="button donate" data-type="wechat"><span class="icon is-small"><i class="fab fa-weixin"></i></span><span>微信</span><span class="qrcode"><img src="/" alt="微信"></span></a></div></div></div><nav class="post-navigation mt-4 level is-mobile"><div class="level-start"><a class="article-nav-prev level level-item link-muted" href="/2025/02/28/Bert%E6%A8%A1%E5%9E%8B%E7%9A%84%E6%9C%AC%E8%B4%A8/"><i class="level-item fas fa-chevron-left"></i><span class="level-item">Bert模型的本质</span></a></div><div class="level-end"><a class="article-nav-next level level-item link-muted" href="/2025/02/25/%E4%B8%80%E7%AF%87%E2%80%9C**%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E4%B8%AD%E7%9A%84%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD**%E2%80%9D%E5%BC%95%E5%8F%91%E7%9A%84%E5%AD%A6%E4%B9%A0%E8%A1%80%E6%A1%88/"><span class="level-item">一篇“**神经网络中的反向传播**”引发的学习血案</span><i class="level-item fas fa-chevron-right"></i></a></div></nav><div class="card" id="comments"><div class="card-content"><h3 class="title is-5">评论</h3><div class="notification is-danger">You forgot to set the <code>shortname</code> for Disqus. Please set it in <code>_config.yml</code>.</div></div></div></div><div class="column column-left is-4-tablet is-4-desktop is-3-widescreen  order-1"><div class="card widget" data-type="profile"><div class="card-content"><nav class="level"><div class="level-item has-text-centered flex-shrink-1"><div><figure class="image is-128x128 mx-auto mb-2"><img class="avatar" src="/img/avatar.jpg" alt="A-Corner"></figure><p class="title is-size-4 is-block" style="line-height:inherit;">A-Corner</p><p class="is-size-6 is-block">信息的一角</p><p class="is-size-6 is-flex justify-content-center"><i class="fas fa-map-marker-alt mr-1"></i><span>China（Guangzhou）</span></p></div></div></nav><nav class="level is-mobile"><div class="level-item has-text-centered is-marginless"><div><p class="heading">文章</p><a href="/archives/"><p class="title">12</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">分类</p><a href="/categories/"><p class="title">18</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">标签</p><a href="/tags/"><p class="title">22</p></a></div></div></nav><div class="level"><a class="level-item button is-primary is-rounded" href="https://github.com/A-Corner/a-corner.github.io" target="_blank" rel="me noopener">关注我</a></div><div class="level is-mobile is-multiline"><a class="level-item button is-transparent is-marginless" target="_blank" rel="me noopener" title="Github" href="https://github.com/A-Corner/a-corner.github.io"><i class="fab fa-github"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="me noopener" title="Facebook" href="https://facebook.com"><i class="fab fa-facebook"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="me noopener" title="Twitter" href="https://twitter.com"><i class="fab fa-twitter"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="me noopener" title="Dribbble" href="https://dribbble.com"><i class="fab fa-dribbble"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="me noopener" title="RSS" href="/"><i class="fas fa-rss"></i></a></div></div></div><div class="card widget" data-type="links"><div class="card-content"><div class="menu"><h3 class="menu-label">链接</h3><ul class="menu-list"><li><a class="level is-mobile" href="https://hexo.io" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">Hexo</span></span><span class="level-right"><span class="level-item tag">hexo.io</span></span></a></li><li><a class="level is-mobile" href="https://bulma.io" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">Bulma</span></span><span class="level-right"><span class="level-item tag">bulma.io</span></span></a></li></ul></div></div></div><div class="card widget" data-type="subscribe-email"><div class="card-content"><div class="menu"><h3 class="menu-label">订阅更新</h3><form action="https://feedburner.google.com/fb/a/mailverify" method="post" target="popupwindow" onsubmit="window.open(&#039;https://feedburner.google.com/fb/a/mailverify?uri=&#039;,&#039;popupwindow&#039;,&#039;scrollbars=yes,width=550,height=520&#039;);return true"><input type="hidden" value="" name="uri"><input type="hidden" name="loc" value="en_US"><div class="field has-addons"><div class="control has-icons-left is-expanded"><input class="input" name="email" type="email" placeholder="Email"><span class="icon is-small is-left"><i class="fas fa-envelope"></i></span></div><div class="control"><input class="button" type="submit" value="订阅"></div></div></form></div></div></div><div class="card widget"><div class="card-content"><div class="notification is-danger">You need to set <code>client_id</code> and <code>slot_id</code> to show this AD unit. Please set it in <code>_config.yml</code>.</div></div></div><div class="card widget" data-type="subscribe-email"><div class="card-content"><div class="menu"><h3 class="menu-label">follow.it</h3><form action="" method="post" target="_blank"><div class="field has-addons"><div class="control has-icons-left is-expanded"><input class="input" name="email" type="email" placeholder="Email"><span class="icon is-small is-left"><i class="fas fa-envelope"></i></span></div><div class="control"><input class="button" type="submit" value="订阅"></div></div></form></div></div></div><div class="column-right-shadow is-hidden-widescreen"></div></div><div class="column column-right is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only order-3"><!--!--><div class="card widget" data-type="categories"><div class="card-content"><div class="menu"><h3 class="menu-label">分类</h3><ul class="menu-list"><li><a class="level is-mobile" href="/categories/AI/"><span class="level-start"><span class="level-item">AI</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/Bert/"><span class="level-start"><span class="level-item">Bert</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/LLM/"><span class="level-start"><span class="level-item">LLM</span></span><span class="level-end"><span class="level-item tag">8</span></span></a></li><li><a class="level is-mobile" href="/categories/Model/"><span class="level-start"><span class="level-item">Model</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/RAG/"><span class="level-start"><span class="level-item">RAG</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A/"><span class="level-start"><span class="level-item">分析报告</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%8E%9F%E7%90%86/"><span class="level-start"><span class="level-item">原理</span></span><span class="level-end"><span class="level-item tag">9</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/"><span class="level-start"><span class="level-item">向量数据库</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%AF%B9%E6%AF%94%E5%88%86%E6%9E%90/"><span class="level-start"><span class="level-item">对比分析</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%B7%A5%E5%85%B7/"><span class="level-start"><span class="level-item">工具</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/"><span class="level-start"><span class="level-item">强化学习</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%BE%AE%E8%B0%83/"><span class="level-start"><span class="level-item">微调</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/%E6%8F%90%E7%A4%BA%E5%B7%A5%E7%A8%8B/"><span class="level-start"><span class="level-item">提示工程</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E6%95%B0%E5%AD%A6/"><span class="level-start"><span class="level-item">数学</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E6%A1%86%E6%9E%B6/"><span class="level-start"><span class="level-item">框架</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/"><span class="level-start"><span class="level-item">深度学习</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/%E9%98%85%E8%AF%BB%E6%8A%A5%E5%91%8A/"><span class="level-start"><span class="level-item">阅读报告</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E9%A3%9F%E7%94%A8%E6%96%87%E6%A1%A3/"><span class="level-start"><span class="level-item">食用文档</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></div></div></div><div class="card widget" data-type="recent-posts"><div class="card-content"><h3 class="menu-label">最新文章</h3><article class="media"><div class="media-content"><p class="date"><time dateTime="2025-02-28T07:08:16.614Z">2025-02-28</time></p><p class="title"><a href="/2025/02/28/Bert%E6%A8%A1%E5%9E%8B%E7%9A%84%E6%9C%AC%E8%B4%A8/">Bert模型的本质</a></p><p class="categories"><a href="/categories/LLM/">LLM</a> / <a href="/categories/%E5%8E%9F%E7%90%86/">原理</a> / <a href="/categories/%E5%AF%B9%E6%AF%94%E5%88%86%E6%9E%90/">对比分析</a> / <a href="/categories/Bert/">Bert</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2025-02-25T05:51:16.647Z">2025-02-25</time></p><p class="title"><a href="/2025/02/25/%E5%A4%8D%E6%9D%82%E6%8F%90%E7%A4%BA%E5%B7%A5%E7%A8%8B%EF%BC%9AChain-of-Thought%20vs%20Tree-of-Thought%20%E8%8C%83%E5%BC%8F%E5%AF%B9%E6%AF%94/">复杂提示工程：Chain-of-Thought vs Tree-of-Thought 范式对比</a></p><p class="categories"><a href="/categories/LLM/">LLM</a> / <a href="/categories/%E5%8E%9F%E7%90%86/">原理</a> / <a href="/categories/%E5%AF%B9%E6%AF%94%E5%88%86%E6%9E%90/">对比分析</a> / <a href="/categories/%E6%8F%90%E7%A4%BA%E5%B7%A5%E7%A8%8B/">提示工程</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2025-02-25T03:20:54.429Z">2025-02-25</time></p><p class="title"><a href="/2025/02/25/%E4%B8%80%E7%AF%87%E2%80%9C**%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E4%B8%AD%E7%9A%84%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD**%E2%80%9D%E5%BC%95%E5%8F%91%E7%9A%84%E5%AD%A6%E4%B9%A0%E8%A1%80%E6%A1%88/">一篇“**神经网络中的反向传播**”引发的学习血案</a></p><p class="categories"><a href="/categories/LLM/">LLM</a> / <a href="/categories/%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A/">分析报告</a> / <a href="/categories/%E5%8E%9F%E7%90%86/">原理</a> / <a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a> / <a href="/categories/%E5%BE%AE%E8%B0%83/">微调</a> / <a href="/categories/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/">强化学习</a> / <a href="/categories/%E9%98%85%E8%AF%BB%E6%8A%A5%E5%91%8A/">阅读报告</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2025-02-21T03:26:59.380Z">2025-02-21</time></p><p class="title"><a href="/2025/02/21/Michael%20Luo%20....%E9%98%85%E8%AF%BB%E6%8A%A5%E5%91%8A/">关于“DeepScaleR：通过扩展强化学习，用1.5B模型超越O1-Preview”（译文）阅读报告</a></p><p class="categories"><a href="/categories/LLM/">LLM</a> / <a href="/categories/%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A/">分析报告</a> / <a href="/categories/%E5%8E%9F%E7%90%86/">原理</a> / <a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a> / <a href="/categories/%E5%BE%AE%E8%B0%83/">微调</a> / <a href="/categories/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/">强化学习</a> / <a href="/categories/%E9%98%85%E8%AF%BB%E6%8A%A5%E5%91%8A/">阅读报告</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2025-02-20T06:44:10.490Z">2025-02-20</time></p><p class="title"><a href="/2025/02/20/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80%E5%85%A5%E9%97%A8/">深度学习数学基础入门</a></p><p class="categories"><a href="/categories/LLM/">LLM</a> / <a href="/categories/%E5%8E%9F%E7%90%86/">原理</a> / <a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a> / <a href="/categories/%E6%95%B0%E5%AD%A6/">数学</a></p></div></article></div></div><div class="card widget" data-type="archives"><div class="card-content"><div class="menu"><h3 class="menu-label">归档</h3><ul class="menu-list"><li><a class="level is-mobile" href="/archives/2025/02/"><span class="level-start"><span class="level-item">二月 2025</span></span><span class="level-end"><span class="level-item tag">12</span></span></a></li></ul></div></div></div><div class="card widget" data-type="tags"><div class="card-content"><div class="menu"><h3 class="menu-label">标签</h3><div class="field is-grouped is-grouped-multiline"><div class="control"><a class="tags has-addons" href="/tags/AI/"><span class="tag">AI</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Bert/"><span class="tag">Bert</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/LLM/"><span class="tag">LLM</span><span class="tag">8</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Model/"><span class="tag">Model</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/RAG/"><span class="tag">RAG</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%85%A5%E9%97%A8/"><span class="tag">入门</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A/"><span class="tag">分析报告</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8E%9F%E7%90%86/"><span class="tag">原理</span><span class="tag">9</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/"><span class="tag">向量数据库</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%AF%B9%E6%AF%94%E5%88%86%E6%9E%90/"><span class="tag">对比分析</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%B7%A5%E5%85%B7/"><span class="tag">工具</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/"><span class="tag">强化学习</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%BE%AE%E8%B0%83/"><span class="tag">微调</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%8F%90%E7%A4%BA%E5%B7%A5%E7%A8%8B/"><span class="tag">提示工程</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%95%B0%E5%AD%A6/"><span class="tag">数学</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%A1%86%E6%9E%B6/"><span class="tag">框架</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%A6%82%E7%8E%87/"><span class="tag">概率</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/"><span class="tag">深度学习</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%88%AC%E8%99%AB/"><span class="tag">爬虫</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%87%AA%E5%8A%A8%E5%8C%96/"><span class="tag">自动化</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E9%98%85%E8%AF%BB%E6%8A%A5%E5%91%8A/"><span class="tag">阅读报告</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E9%A3%9F%E7%94%A8%E6%96%87%E6%A1%A3/"><span class="tag">食用文档</span><span class="tag">1</span></a></div></div></div></div></div></div></div></div></section><footer class="footer"><div class="container"><div class="level"><div class="level-start"><a class="footer-logo is-block mb-2" href="/"><img src="/img/%E4%B8%80%E8%A7%92logo.png" alt="A-Acorner 信息的一角" height="28"></a><p class="is-size-7"><span>&copy; 2025 ViniJack.SJX</span>  Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a> &amp; <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a></p><p class="is-size-7">© 2025 A-Corner</p></div><div class="level-end"><div class="field has-addons"><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/A-Corner/a-corner.github.io"><i class="fab fa-github"></i></a></p></div></div></div></div></footer><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script><script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script><script>moment.locale("zh-cn");</script><script>var IcarusThemeSettings = {
+            article: {
+                highlight: {
+                    clipboard: true,
+                    fold: 'unfolded'
+                }
+            }
+        };</script><script data-pjax src="/js/column.js"></script><script src="/js/animation.js"></script><a id="back-to-top" title="回到顶端" href="javascript:;"><i class="fas fa-chevron-up"></i></a><script data-pjax src="/js/back_to_top.js" defer></script><!--!--><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.js" defer></script><script>window.addEventListener("load", () => {
+      window.cookieconsent.initialise({
+        type: "info",
+        theme: "edgeless",
+        static: false,
+        position: "bottom-left",
+        content: {
+          message: "此网站使用Cookie来改善您的体验。",
+          dismiss: "知道了！",
+          allow: "允许使用Cookie",
+          deny: "拒绝",
+          link: "了解更多",
+          policy: "Cookie政策",
+          href: "https://www.cookiesandyou.com/",
+        },
+        palette: {
+          popup: {
+            background: "#edeff5",
+            text: "#838391"
+          },
+          button: {
+            background: "#4b81e8"
+          },
+        },
+      });
+    });</script><script src="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/js/lightgallery.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/js/jquery.justifiedGallery.min.js" defer></script><script>window.addEventListener("load", () => {
+            if (typeof $.fn.lightGallery === 'function') {
+                $('.article').lightGallery({ selector: '.gallery-item' });
+            }
+            if (typeof $.fn.justifiedGallery === 'function') {
+                if ($('.justified-gallery > p > .gallery-item').length) {
+                    $('.justified-gallery > p > .gallery-item').unwrap();
+                }
+                $('.justified-gallery').justifiedGallery();
+            }
+        });</script><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js"></script><script src="/js/pjax.js"></script><!--!--><!--!--><!--!--><script data-pjax src="/js/main.js" defer></script><div class="searchbox"><div class="searchbox-container"><div class="searchbox-header"><div class="searchbox-input-container"><input class="searchbox-input" type="text" placeholder="想要查找什么..."></div><a class="searchbox-close" href="javascript:;">×</a></div><div class="searchbox-body"></div></div></div><script data-pjax src="/js/insight.js" defer></script><script data-pjax>document.addEventListener('DOMContentLoaded', function () {
+            loadInsight({"contentUrl":"/content.json"}, {"hint":"想要查找什么...","untitled":"(无标题)","posts":"文章","pages":"页面","categories":"分类","tags":"标签"});
+        });</script></body></html>
