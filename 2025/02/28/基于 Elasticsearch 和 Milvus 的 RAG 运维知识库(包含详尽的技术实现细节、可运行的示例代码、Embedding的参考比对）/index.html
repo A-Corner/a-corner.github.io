@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta><title>基于 Elasticsearch 和 Milvus 的 RAG 运维知识库(包含详尽的技术实现细节、可运行的示例代码、Embedding的参考比对） - A-Acorner 信息的一角</title><link rel="manifest" href="/manifest.json"><meta name="application-name" content="A-Acorner 信息的一角"><meta name="msapplication-TileImage" content="/img/一角favicon.jpg"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="A-Acorner 信息的一角"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="description" content="基于 Elasticsearch 和 Milvus 的 RAG 运维知识库(包含详尽的技术实现细节、可运行的示例代码、Embedding的参考比对）"><meta property="og:type" content="blog"><meta property="og:title" content="基于 Elasticsearch 和 Milvus 的 RAG 运维知识库(包含详尽的技术实现细节、可运行的示例代码、Embedding的参考比对）"><meta property="og:url" content="http://acorner.ac.cn/2025/02/28/%E5%9F%BA%E4%BA%8E%20Elasticsearch%20%E5%92%8C%20Milvus%20%E7%9A%84%20RAG%20%E8%BF%90%E7%BB%B4%E7%9F%A5%E8%AF%86%E5%BA%93(%E5%8C%85%E5%90%AB%E8%AF%A6%E5%B0%BD%E7%9A%84%E6%8A%80%E6%9C%AF%E5%AE%9E%E7%8E%B0%E7%BB%86%E8%8A%82%E3%80%81%E5%8F%AF%E8%BF%90%E8%A1%8C%E7%9A%84%E7%A4%BA%E4%BE%8B%E4%BB%A3%E7%A0%81%E3%80%81Embedding%E7%9A%84%E5%8F%82%E8%80%83%E6%AF%94%E5%AF%B9%EF%BC%89/"><meta property="og:site_name" content="A-Acorner 信息的一角"><meta property="og:description" content="基于 Elasticsearch 和 Milvus 的 RAG 运维知识库(包含详尽的技术实现细节、可运行的示例代码、Embedding的参考比对）"><meta property="og:locale" content="zh_CN"><meta property="og:image" content="http://acorner.ac.cn/img/og_image.png"><meta property="article:published_time" content="2025-02-28T03:24:23.907Z"><meta property="article:modified_time" content="2025-02-28T08:06:56.186Z"><meta property="article:author" content="ViniJack.SJX"><meta property="article:tag" content="LLM"><meta property="article:tag" content="原理"><meta property="article:tag" content="对比分析"><meta property="article:tag" content="RAG"><meta property="article:tag" content="食用文档"><meta property="twitter:card" content="summary"><meta property="twitter:image:src" content="http://acorner.ac.cn/img/og_image.png"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"http://acorner.ac.cn/2025/02/28/%E5%9F%BA%E4%BA%8E%20Elasticsearch%20%E5%92%8C%20Milvus%20%E7%9A%84%20RAG%20%E8%BF%90%E7%BB%B4%E7%9F%A5%E8%AF%86%E5%BA%93(%E5%8C%85%E5%90%AB%E8%AF%A6%E5%B0%BD%E7%9A%84%E6%8A%80%E6%9C%AF%E5%AE%9E%E7%8E%B0%E7%BB%86%E8%8A%82%E3%80%81%E5%8F%AF%E8%BF%90%E8%A1%8C%E7%9A%84%E7%A4%BA%E4%BE%8B%E4%BB%A3%E7%A0%81%E3%80%81Embedding%E7%9A%84%E5%8F%82%E8%80%83%E6%AF%94%E5%AF%B9%EF%BC%89/"},"headline":"基于 Elasticsearch 和 Milvus 的 RAG 运维知识库(包含详尽的技术实现细节、可运行的示例代码、Embedding的参考比对）","image":["http://acorner.ac.cn/img/og_image.png"],"datePublished":"2025-02-28T03:24:23.907Z","dateModified":"2025-02-28T08:06:56.186Z","author":{"@type":"Person","name":"ViniJack.SJX"},"publisher":{"@type":"Organization","name":"A-Acorner 信息的一角","logo":{"@type":"ImageObject","url":"http://acorner.ac.cn/img/一角logo.png"}},"description":"基于 Elasticsearch 和 Milvus 的 RAG 运维知识库(包含详尽的技术实现细节、可运行的示例代码、Embedding的参考比对）"}</script><link rel="canonical" href="http://acorner.ac.cn/2025/02/28/%E5%9F%BA%E4%BA%8E%20Elasticsearch%20%E5%92%8C%20Milvus%20%E7%9A%84%20RAG%20%E8%BF%90%E7%BB%B4%E7%9F%A5%E8%AF%86%E5%BA%93(%E5%8C%85%E5%90%AB%E8%AF%A6%E5%B0%BD%E7%9A%84%E6%8A%80%E6%9C%AF%E5%AE%9E%E7%8E%B0%E7%BB%86%E8%8A%82%E3%80%81%E5%8F%AF%E8%BF%90%E8%A1%8C%E7%9A%84%E7%A4%BA%E4%BE%8B%E4%BB%A3%E7%A0%81%E3%80%81Embedding%E7%9A%84%E5%8F%82%E8%80%83%E6%AF%94%E5%AF%B9%EF%BC%89/"><link rel="icon" href="/img/%E4%B8%80%E8%A7%92favicon.jpg"><link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.0.0/css/all.css"><link data-pjax rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/atom-one-light.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600&amp;family=Roboto+Mono"><link data-pjax rel="stylesheet" href="/css/cyberpunk.css"><style>body>.footer,body>.navbar,body>.section{opacity:0}</style><!--!--><!--!--><!--!--><!--!--><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/css/lightgallery.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/css/justifiedGallery.min.css"><!--!--><!--!--><!--!--><style>.pace{-webkit-pointer-events:none;pointer-events:none;-webkit-user-select:none;-moz-user-select:none;user-select:none}.pace-inactive{display:none}.pace .pace-progress{background:#3273dc;position:fixed;z-index:2000;top:0;right:100%;width:100%;height:2px}</style><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><!--!--><!--!--><!-- hexo injector head_end start --><script>
+  (function () {
+      function switchTab() {
+          if (!location.hash) {
+            return;
+          }
+
+          const id = '#' + CSS.escape(location.hash.substring(1));
+          const $tabMenu = document.querySelector(`.tabs a[href="${id}"]`);
+          if (!$tabMenu) {
+            return;
+          }
+
+          const $tabMenuContainer = $tabMenu.parentElement.parentElement;
+          Array.from($tabMenuContainer.children).forEach($menu => $menu.classList.remove('is-active'));
+          Array.from($tabMenuContainer.querySelectorAll('a'))
+              .map($menu => document.getElementById($menu.getAttribute("href").substring(1)))
+              .forEach($content => $content.classList.add('is-hidden'));
+
+          if ($tabMenu) {
+              $tabMenu.parentElement.classList.add('is-active');
+          }
+          const $activeTab = document.querySelector(id);
+          if ($activeTab) {
+              $activeTab.classList.remove('is-hidden');
+          }
+      }
+      switchTab();
+      window.addEventListener('hashchange', switchTab, false);
+  })();
+  </script><!-- hexo injector head_end end --><meta name="generator" content="Hexo 7.3.0"></head><body class="is-3-column"><nav class="navbar navbar-main"><div class="container navbar-container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/"><img src="/img/%E4%B8%80%E8%A7%92logo.png" alt="A-Acorner 信息的一角" height="28"></a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">Home</a><a class="navbar-item" href="/archives">Archives</a><a class="navbar-item" href="/categories">Categories</a><a class="navbar-item" href="/tags">Tags</a><a class="navbar-item" href="/about">About</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/A-Corner/a-corner.github.io"><i class="fab fa-github"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-6-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time dateTime="2025-02-28T03:24:23.907Z" title="2025/2/28 11:24:23">2025-02-28</time>发表</span><span class="level-item"><time dateTime="2025-02-28T08:06:56.186Z" title="2025/2/28 16:06:56">2025-02-28</time>更新</span><span class="level-item"><a class="link-muted" href="/categories/LLM/">LLM</a><span> / </span><a class="link-muted" href="/categories/RAG/">RAG</a><span> / </span><a class="link-muted" href="/categories/%E5%8E%9F%E7%90%86/">原理</a><span> / </span><a class="link-muted" href="/categories/%E5%AF%B9%E6%AF%94%E5%88%86%E6%9E%90/">对比分析</a><span> / </span><a class="link-muted" href="/categories/%E9%A3%9F%E7%94%A8%E6%96%87%E6%A1%A3/">食用文档</a></span><span class="level-item">1 小时读完 (大约8737个字)</span></div></div><h1 class="title is-3 is-size-4-mobile">基于 Elasticsearch 和 Milvus 的 RAG 运维知识库(包含详尽的技术实现细节、可运行的示例代码、Embedding的参考比对）</h1><div class="content"><p>最近在整理基于RAG的运维知识库 (ElasticSearch + Milvus) 的详细部署指南，其中包含了详尽的技术实现细节、可运行的示例代码、原理分析、优缺点分析和应用场景分析。</p>
+<p><strong>架构描述：</strong> 基于RAG的运维知识库 (ElasticSearch + Milvus)<br> <span id="more"></span><br><strong>部署指南</strong></p>
+<h3 id="1-极其详细的部署步骤-包含详尽的技术实现细节和分步骤、可运行的示例代码-也只能给示例代码"><a href="#1-极其详细的部署步骤-包含详尽的技术实现细节和分步骤、可运行的示例代码-也只能给示例代码" class="headerlink" title="1. 极其详细的部署步骤 (包含详尽的技术实现细节和分步骤、可运行的示例代码-也只能给示例代码)"></a>1. 极其详细的部署步骤 (包含详尽的技术实现细节和分步骤、可运行的示例代码-也只能给示例代码)</h3><h4 id="1-1-环境准备"><a href="#1-1-环境准备" class="headerlink" title="1.1 环境准备"></a>1.1 环境准备</h4><ul>
+<li><p><strong>操作系统选择：</strong> 推荐使用 Linux 发行版，如 CentOS 7&#x2F;8、Ubuntu 18.04&#x2F;20.04。本指南以 CentOS 7 为例。</p>
+</li>
+<li><p><strong>网络环境配置：</strong> 确保服务器之间网络互通，防火墙开放 Elasticsearch (默认端口 9200)、Milvus (默认端口 19530) 和应用程序所需的端口。</p>
+</li>
+<li><p><strong>安装必要软件包：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 更新 yum 源</span></span><br><span class="line"><span class="built_in">sudo</span> yum update -y</span><br><span class="line"></span><br><span class="line"><span class="comment"># 安装常用工具</span></span><br><span class="line"><span class="built_in">sudo</span> yum install -y wget curl vim net-tools</span><br><span class="line"></span><br><span class="line"><span class="comment"># 安装 Java (Elasticsearch 依赖)</span></span><br><span class="line"><span class="built_in">sudo</span> yum install -y java-1.8.0-openjdk-devel</span><br><span class="line"></span><br><span class="line"><span class="comment"># 安装 Python (用于后续脚本)</span></span><br><span class="line"><span class="built_in">sudo</span> yum install -y python3 python3-pip</span><br><span class="line"></span><br><span class="line"><span class="comment"># 安装 Docker 和 Docker Compose (可选，用于容器化部署)</span></span><br><span class="line"><span class="built_in">sudo</span> yum install -y yum-utils</span><br><span class="line"><span class="built_in">sudo</span> yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo</span><br><span class="line"><span class="built_in">sudo</span> yum install -y docker-ce docker-ce-cli containerd.io</span><br><span class="line"><span class="built_in">sudo</span> systemctl start docker</span><br><span class="line"><span class="built_in">sudo</span> systemctl <span class="built_in">enable</span> docker</span><br><span class="line"><span class="built_in">sudo</span> curl -L <span class="string">&quot;https://github.com/docker/compose/releases/download/1.29.2/docker-compose-<span class="subst">$(uname -s)</span>-<span class="subst">$(uname -m)</span>&quot;</span> -o /usr/local/bin/docker-compose</span><br><span class="line"><span class="built_in">sudo</span> <span class="built_in">chmod</span> +x /usr/local/bin/docker-compose</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>配置环境变量：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 编辑 /etc/profile 或 ~/.bashrc</span></span><br><span class="line"><span class="comment"># 添加以下内容 (根据实际安装路径修改)</span></span><br><span class="line"><span class="built_in">export</span> JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk</span><br><span class="line"><span class="built_in">export</span> PATH=<span class="variable">$JAVA_HOME</span>/bin:<span class="variable">$PATH</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 使环境变量生效</span></span><br><span class="line"><span class="built_in">source</span> /etc/profile  <span class="comment"># 或 source ~/.bashrc</span></span><br></pre></td></tr></table></figure></li>
+</ul>
+<h4 id="1-2-组件安装配置"><a href="#1-2-组件安装配置" class="headerlink" title="1.2 组件安装配置"></a>1.2 组件安装配置</h4><h5 id="1-2-1-Elasticsearch-安装配置"><a href="#1-2-1-Elasticsearch-安装配置" class="headerlink" title="1.2.1 Elasticsearch 安装配置"></a>1.2.1 Elasticsearch 安装配置</h5><ol>
+<li><p><strong>下载 Elasticsearch：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.17.17-linux-x86_64.tar.gz  <span class="comment"># 根据需要选择版本</span></span><br><span class="line">tar -xzf elasticsearch-7.17.17-linux-x86_64.tar.gz</span><br><span class="line"><span class="built_in">cd</span> elasticsearch-7.17.17/</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>修改配置文件 <code>config/elasticsearch.yml</code>：</strong></p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">cluster.name:</span> <span class="string">my-rag-cluster</span>  <span class="comment"># 集群名称</span></span><br><span class="line"><span class="attr">node.name:</span> <span class="string">node-1</span>  <span class="comment"># 节点名称</span></span><br><span class="line"><span class="attr">network.host:</span> <span class="number">0.0</span><span class="number">.0</span><span class="number">.0</span>  <span class="comment"># 监听所有 IP 地址</span></span><br><span class="line"><span class="attr">http.port:</span> <span class="number">9200</span>  <span class="comment"># Elasticsearch 端口</span></span><br><span class="line"><span class="attr">discovery.seed_hosts:</span> [<span class="string">&quot;node-1&quot;</span>]  <span class="comment">#  单节点部署，配置为节点名称</span></span><br><span class="line"><span class="attr">cluster.initial_master_nodes:</span> [<span class="string">&quot;node-1&quot;</span>]  <span class="comment"># 单节点部署</span></span><br><span class="line"><span class="comment"># 建议配置 (根据实际情况调整):</span></span><br><span class="line"><span class="comment"># bootstrap.memory_lock: true  # 锁定内存，防止交换</span></span><br><span class="line"><span class="comment"># xpack.security.enabled: false  # 如果不需要安全认证，可以禁用</span></span><br><span class="line"><span class="comment"># 注意：以上只是示例配置，生产环境请务必根据实际情况进行详细配置，特别是安全相关的配置。</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>关键参数解释：</strong></p>
+<ul>
+<li><code>cluster.name</code>:  集群名称，同一集群内的节点应具有相同的集群名称。</li>
+<li><code>node.name</code>:  节点名称，用于标识集群中的单个节点。</li>
+<li><code>network.host</code>:  Elasticsearch 监听的 IP 地址，<code>0.0.0.0</code> 表示监听所有 IP。</li>
+<li><code>http.port</code>:  Elasticsearch 的 HTTP 端口，默认为 9200。</li>
+<li><code>discovery.seed_hosts</code>:  集群发现的主机列表。在单节点部署中，可以设置为节点名称。</li>
+<li><code>cluster.initial_master_nodes</code>:  初始主节点列表。在单节点部署中，设置为节点名称。</li>
+<li><code>bootstrap.memory_lock</code>:  是否锁定内存，防止 Elasticsearch 内存被交换到磁盘，影响性能。</li>
+<li><code>xpack.security.enabled</code>：开启xpack security功能。</li>
+</ul>
+</li>
+<li><p><strong>启动 Elasticsearch：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./bin/elasticsearch -d  <span class="comment"># 后台启动</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>验证 Elasticsearch：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">curl http://localhost:9200/</span><br></pre></td></tr></table></figure>
+
+<p>如果返回 JSON 格式的 Elasticsearch 信息，则表示启动成功。</p>
+</li>
+</ol>
+<h5 id="1-2-2-Milvus-安装配置"><a href="#1-2-2-Milvus-安装配置" class="headerlink" title="1.2.2 Milvus 安装配置"></a>1.2.2 Milvus 安装配置</h5><ol>
+<li><p><strong>使用 Docker Compose 安装 Milvus (推荐)：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 创建 docker-compose.yml 文件</span></span><br><span class="line"><span class="built_in">cat</span> &gt; docker-compose.yml &lt;&lt;<span class="string">EOF</span></span><br><span class="line"><span class="string">version: &#x27;3.5&#x27;</span></span><br><span class="line"><span class="string">services:</span></span><br><span class="line"><span class="string">  etcd:</span></span><br><span class="line"><span class="string">    container_name: milvus-etcd</span></span><br><span class="line"><span class="string">    image: milvusdb/etcd:v3.5.5</span></span><br><span class="line"><span class="string">    environment:</span></span><br><span class="line"><span class="string">      ETCD_USE_EMBEDDED: &quot;true&quot;</span></span><br><span class="line"><span class="string">    volumes:</span></span><br><span class="line"><span class="string">      - $&#123;DOCKER_VOLUME_DIRECTORY:-.&#125;/volumes/etcd:/etcd</span></span><br><span class="line"><span class="string">  standalone:</span></span><br><span class="line"><span class="string">    container_name: milvus-standalone</span></span><br><span class="line"><span class="string">    image: milvusdb/milvus:v2.2.14 # 根据需要选择版本</span></span><br><span class="line"><span class="string">    command: [&quot;milvus&quot;, &quot;run&quot;, &quot;standalone&quot;]</span></span><br><span class="line"><span class="string">    environment:</span></span><br><span class="line"><span class="string">      ETCD_ENDPOINTS: etcd:2379</span></span><br><span class="line"><span class="string">      MINIO_ADDRESS: minio:9000</span></span><br><span class="line"><span class="string">    volumes:</span></span><br><span class="line"><span class="string">      - $&#123;DOCKER_VOLUME_DIRECTORY:-.&#125;/volumes/milvus:/var/lib/milvus</span></span><br><span class="line"><span class="string">    ports:</span></span><br><span class="line"><span class="string">      - &quot;19530:19530&quot;</span></span><br><span class="line"><span class="string">      - &quot;9091:9091&quot;</span></span><br><span class="line"><span class="string">    depends_on:</span></span><br><span class="line"><span class="string">      - &quot;etcd&quot;</span></span><br><span class="line"><span class="string">  minio:</span></span><br><span class="line"><span class="string">    container_name: milvus-minio</span></span><br><span class="line"><span class="string">    image: minio/minio:RELEASE.2022-10-29T06-21-33Z</span></span><br><span class="line"><span class="string">    environment:</span></span><br><span class="line"><span class="string">      MINIO_ACCESS_KEY: minioadmin</span></span><br><span class="line"><span class="string">      MINIO_SECRET_KEY: minioadmin</span></span><br><span class="line"><span class="string">    volumes:</span></span><br><span class="line"><span class="string">      - $&#123;DOCKER_VOLUME_DIRECTORY:-.&#125;/volumes/minio:/minio_data</span></span><br><span class="line"><span class="string">    ports:</span></span><br><span class="line"><span class="string">      - &quot;9000:9000&quot;</span></span><br><span class="line"><span class="string">      - &quot;9001:9001&quot;</span></span><br><span class="line"><span class="string">    command: minio server /minio_data --console-address &quot;:9001&quot;</span></span><br><span class="line"><span class="string">    depends_on:</span></span><br><span class="line"><span class="string">      - &quot;etcd&quot;</span></span><br><span class="line"><span class="string">networks:</span></span><br><span class="line"><span class="string">  default:</span></span><br><span class="line"><span class="string">    name: milvus</span></span><br><span class="line"><span class="string">EOF</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 启动 Milvus</span></span><br><span class="line">docker-compose up -d</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p>   <strong>关键配置参数解释</strong>：</p>
+<ul>
+<li><code>milvus-etcd</code>:  etcd镜像，用于存储milvus的元数据。</li>
+<li><code>milvus-standalone</code>： Milvus的standalone模式镜像。<ul>
+<li><code>ETCD_ENDPOINTS</code>:  etcd 的连接地址。</li>
+<li><code>MINIO_ADDRESS</code>:  MinIO 的连接地址，用于存储数据。</li>
+</ul>
+</li>
+<li><code>milvus-minio</code>: 对象存储minIO镜像。<ul>
+<li><code>MINIO_ACCESS_KEY</code>：MinIO用户名</li>
+<li><code>MINIO_SECRET_KEY</code>：MinIO密码</li>
+</ul>
+</li>
+</ul>
+<ol start="2">
+<li><p><strong>验证 Milvus：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker ps  <span class="comment"># 查看 Milvus 容器是否正常运行</span></span><br></pre></td></tr></table></figure></li>
+</ol>
+<h5 id="1-2-3-安装-Python-依赖"><a href="#1-2-3-安装-Python-依赖" class="headerlink" title="1.2.3 安装 Python 依赖"></a>1.2.3 安装 Python 依赖</h5><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">pip3 install pymilvus==2.2.14 elasticsearch==7.17.1 <span class="comment"># 注意版本匹配</span></span><br><span class="line">pip3 install sentence-transformers</span><br></pre></td></tr></table></figure>
+
+<h4 id="1-3-组件集成-RAG-应用程序"><a href="#1-3-组件集成-RAG-应用程序" class="headerlink" title="1.3 组件集成 (RAG 应用程序)"></a>1.3 组件集成 (RAG 应用程序)</h4><p>以下是一个 Python 代码示例，展示如何使用 Elasticsearch 和 Milvus 实现 RAG：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> elasticsearch <span class="keyword">import</span> Elasticsearch</span><br><span class="line"><span class="keyword">from</span> pymilvus <span class="keyword">import</span> connections, FieldSchema, CollectionSchema, DataType, Collection, utility</span><br><span class="line"><span class="keyword">from</span> sentence_transformers <span class="keyword">import</span> SentenceTransformer</span><br><span class="line"></span><br><span class="line"><span class="comment"># --- 1. 连接到 Elasticsearch 和 Milvus ---</span></span><br><span class="line"></span><br><span class="line">es = Elasticsearch(</span><br><span class="line">    hosts=[<span class="string">&quot;http://localhost:9200&quot;</span>],  <span class="comment"># Elasticsearch 地址</span></span><br><span class="line">    <span class="comment"># 如果 Elasticsearch 启用了安全认证，需要提供用户名和密码</span></span><br><span class="line">    <span class="comment"># http_auth=(&quot;elastic&quot;, &quot;your_password&quot;)</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line">connections.connect(</span><br><span class="line">    alias=<span class="string">&quot;default&quot;</span>,</span><br><span class="line">    host=<span class="string">&quot;localhost&quot;</span>,  <span class="comment"># Milvus 地址</span></span><br><span class="line">    port=<span class="string">&quot;19530&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># --- 2. 定义 Elasticsearch 索引和 Milvus Collection ---</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># Elasticsearch 索引</span></span><br><span class="line">index_name = <span class="string">&quot;operations_knowledge&quot;</span></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> es.indices.exists(index=index_name):</span><br><span class="line">    es.indices.create(</span><br><span class="line">        index=index_name,</span><br><span class="line">        body=&#123;</span><br><span class="line">            <span class="string">&quot;mappings&quot;</span>: &#123;</span><br><span class="line">                <span class="string">&quot;properties&quot;</span>: &#123;</span><br><span class="line">                    <span class="string">&quot;title&quot;</span>: &#123;<span class="string">&quot;type&quot;</span>: <span class="string">&quot;text&quot;</span>&#125;,</span><br><span class="line">                    <span class="string">&quot;content&quot;</span>: &#123;<span class="string">&quot;type&quot;</span>: <span class="string">&quot;text&quot;</span>&#125;,</span><br><span class="line">                    <span class="string">&quot;tags&quot;</span>: &#123;<span class="string">&quot;type&quot;</span>: <span class="string">&quot;keyword&quot;</span>&#125;,  <span class="comment"># 可选的标签字段</span></span><br><span class="line">                    <span class="comment"># ... 其他字段 ...</span></span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    )</span><br><span class="line"></span><br><span class="line"><span class="comment"># Milvus Collection</span></span><br><span class="line">collection_name = <span class="string">&quot;operations_knowledge_embeddings&quot;</span></span><br><span class="line"><span class="keyword">if</span> <span class="keyword">not</span> utility.has_collection(collection_name):</span><br><span class="line">    fields = [</span><br><span class="line">        FieldSchema(name=<span class="string">&quot;id&quot;</span>, dtype=DataType.INT64, is_primary=<span class="literal">True</span>, auto_id=<span class="literal">True</span>),</span><br><span class="line">        FieldSchema(name=<span class="string">&quot;doc_id&quot;</span>, dtype=DataType.VARCHAR, max_length=<span class="number">256</span>), <span class="comment"># 存储对应的 Elasticsearch 文档 ID</span></span><br><span class="line">        FieldSchema(name=<span class="string">&quot;embedding&quot;</span>, dtype=DataType.FLOAT_VECTOR, dim=<span class="number">768</span>)  <span class="comment"># 假设使用 768 维的向量</span></span><br><span class="line">    ]</span><br><span class="line">    schema = CollectionSchema(fields, <span class="string">&quot;Operations Knowledge Embeddings&quot;</span>)</span><br><span class="line">    collection = Collection(collection_name, schema)</span><br><span class="line">    index_params = &#123;</span><br><span class="line">        <span class="string">&quot;metric_type&quot;</span>: <span class="string">&quot;L2&quot;</span>,  <span class="comment"># 欧氏距离</span></span><br><span class="line">        <span class="string">&quot;index_type&quot;</span>: <span class="string">&quot;IVF_FLAT&quot;</span>,  <span class="comment"># 索引类型</span></span><br><span class="line">        <span class="string">&quot;params&quot;</span>: &#123;<span class="string">&quot;nlist&quot;</span>: <span class="number">1024</span>&#125;  <span class="comment"># 索引参数</span></span><br><span class="line">    &#125;</span><br><span class="line">    collection.create_index(field_name=<span class="string">&quot;embedding&quot;</span>, index_params=index_params)</span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    collection = Collection(collection_name)</span><br><span class="line"></span><br><span class="line">collection.load()</span><br><span class="line"></span><br><span class="line"><span class="comment"># --- 3. 加载数据到 Elasticsearch 和 Milvus ---</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 示例文档数据 (实际应用中从数据库或其他来源获取)</span></span><br><span class="line">documents = [</span><br><span class="line">    &#123;<span class="string">&quot;title&quot;</span>: <span class="string">&quot;服务器无法启动&quot;</span>, <span class="string">&quot;content&quot;</span>: <span class="string">&quot;检查电源、硬件和操作系统日志。&quot;</span>, <span class="string">&quot;tags&quot;</span>: [<span class="string">&quot;服务器&quot;</span>, <span class="string">&quot;启动&quot;</span>]&#125;,</span><br><span class="line">    &#123;<span class="string">&quot;title&quot;</span>: <span class="string">&quot;网络连接中断&quot;</span>, <span class="string">&quot;content&quot;</span>: <span class="string">&quot;检查网线、交换机和路由器配置。&quot;</span>, <span class="string">&quot;tags&quot;</span>: [<span class="string">&quot;网络&quot;</span>, <span class="string">&quot;连接&quot;</span>]&#125;,</span><br><span class="line">    <span class="comment"># ... 更多文档 ...</span></span><br><span class="line">]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 加载 Sentence Transformer 模型</span></span><br><span class="line">model = SentenceTransformer(<span class="string">&#x27;all-mpnet-base-v2&#x27;</span>) <span class="comment"># HuggingFace模型</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 将文档批量插入 Elasticsearch 和 Milvus</span></span><br><span class="line">bulk_actions = []</span><br><span class="line"><span class="keyword">for</span> doc <span class="keyword">in</span> documents:</span><br><span class="line">    <span class="comment"># 插入 Elasticsearch</span></span><br><span class="line">    es_action = &#123;</span><br><span class="line">        <span class="string">&quot;_index&quot;</span>: index_name,</span><br><span class="line">        <span class="string">&quot;_source&quot;</span>: doc,</span><br><span class="line">    &#125;</span><br><span class="line">    bulk_actions.append(es_action)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 计算文档向量</span></span><br><span class="line">    embedding = model.encode(doc[<span class="string">&quot;content&quot;</span>]).tolist()</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 插入 Milvus</span></span><br><span class="line">    milvus_data = [</span><br><span class="line">        &#123;<span class="string">&quot;doc_id&quot;</span>: <span class="built_in">str</span>(<span class="built_in">len</span>(bulk_actions) // <span class="number">2</span>), <span class="string">&quot;embedding&quot;</span>: embedding&#125;,  <span class="comment"># 注意 doc_id 的类型和对应关系</span></span><br><span class="line">    ]</span><br><span class="line">    collection.insert(milvus_data)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 执行 Elasticsearch 批量插入</span></span><br><span class="line"><span class="keyword">if</span> bulk_actions:</span><br><span class="line">    es.bulk(index=index_name, operations=bulk_actions)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 刷新 Elasticsearch 索引</span></span><br><span class="line">es.indices.refresh(index=index_name)</span><br><span class="line"></span><br><span class="line"><span class="comment"># --- 4. 执行 RAG 检索 ---</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">rag_search</span>(<span class="params">query, top_k=<span class="number">5</span></span>):</span><br><span class="line">    <span class="comment"># 1. 将用户查询向量化</span></span><br><span class="line">    query_embedding = model.encode(query).tolist()</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 2. 在 Milvus 中进行向量相似度检索</span></span><br><span class="line">    search_params = &#123;<span class="string">&quot;metric_type&quot;</span>: <span class="string">&quot;L2&quot;</span>, <span class="string">&quot;params&quot;</span>: &#123;<span class="string">&quot;nprobe&quot;</span>: <span class="number">16</span>&#125;&#125;</span><br><span class="line">    results = collection.search(</span><br><span class="line">        data=[query_embedding],</span><br><span class="line">        anns_field=<span class="string">&quot;embedding&quot;</span>,</span><br><span class="line">        param=search_params,</span><br><span class="line">        limit=top_k,</span><br><span class="line">        expr=<span class="literal">None</span>, <span class="comment"># 无需表达式，可以添加基于标量字段的过滤表达式</span></span><br><span class="line">        output_fields=[<span class="string">&quot;doc_id&quot;</span>],  <span class="comment"># 获取对应的 Elasticsearch 文档 ID</span></span><br><span class="line">    )</span><br><span class="line">    doc_ids = [hit.<span class="built_in">id</span> <span class="keyword">for</span> hit <span class="keyword">in</span> results[<span class="number">0</span>]]</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 3. 在 Elasticsearch 中检索文档</span></span><br><span class="line">    es_results = es.mget(index=index_name, body=&#123;<span class="string">&#x27;ids&#x27;</span>: doc_ids&#125;)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 4. 整合结果 (这里简单地将 Milvus 检索结果和 Elasticsearch 检索结果合并)</span></span><br><span class="line">    retrieved_docs = []</span><br><span class="line">    <span class="keyword">for</span> doc <span class="keyword">in</span> es_results[<span class="string">&#x27;docs&#x27;</span>]:</span><br><span class="line">      <span class="keyword">if</span> doc[<span class="string">&#x27;found&#x27;</span>]: <span class="comment"># 防止找不到文档</span></span><br><span class="line">        retrieved_docs.append(doc[<span class="string">&#x27;_source&#x27;</span>])</span><br><span class="line">    <span class="keyword">return</span> retrieved_docs</span><br><span class="line">    <span class="comment"># 5. (可选) 使用 LLM 生成答案 (这部分需要结合具体的 LLM 模型和 API)</span></span><br><span class="line">    <span class="comment"># ...</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 示例查询</span></span><br><span class="line">query = <span class="string">&quot;服务器启动不了怎么办？&quot;</span></span><br><span class="line">results = rag_search(query)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 打印检索到的文档</span></span><br><span class="line"><span class="keyword">for</span> doc <span class="keyword">in</span> results:</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;Title: <span class="subst">&#123;doc[<span class="string">&#x27;title&#x27;</span>]&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">f&quot;Content: <span class="subst">&#123;doc[<span class="string">&#x27;content&#x27;</span>]&#125;</span>&quot;</span>)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;---&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment"># (可选) 使用 LLM 生成答案</span></span><br><span class="line"><span class="comment"># ...</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>代码解释：</strong></p>
+<ol>
+<li><strong>连接到 Elasticsearch 和 Milvus：</strong> 使用 <code>elasticsearch</code> 和 <code>pymilvus</code> 库分别连接到 Elasticsearch 和 Milvus 集群。</li>
+<li><strong>定义 Elasticsearch 索引和 Milvus Collection：</strong><ul>
+<li>Elasticsearch 索引：定义文档字段（<code>title</code>、<code>content</code>、<code>tags</code> 等）。</li>
+<li>Milvus Collection：定义字段（<code>id</code>、<code>doc_id</code>、<code>embedding</code>），其中 <code>doc_id</code> 用于关联 Elasticsearch 文档，<code>embedding</code> 存储文档向量。</li>
+</ul>
+</li>
+<li><strong>加载数据到 Elasticsearch 和 Milvus：</strong><ul>
+<li>使用 <code>SentenceTransformer</code> 加载预训练的 Sentence Transformer 模型。</li>
+<li>遍历示例文档，将文档插入 Elasticsearch，同时计算文档向量并插入 Milvus。</li>
+</ul>
+</li>
+<li><strong>执行 RAG 检索：</strong><ul>
+<li><code>rag_search</code> 函数：<ul>
+<li>将用户查询向量化。</li>
+<li>在 Milvus 中进行向量相似度检索，获取匹配的文档 ID 列表。</li>
+<li>在 Elasticsearch 中使用 <code>mget</code> 批量检索文档内容。</li>
+<li>整合 Milvus 和 Elasticsearch 的检索结果。</li>
+<li>(可选) 使用 LLM 生成答案 (这部分需要结合具体的 LLM 模型和 API，代码中未包含)。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<p><strong>重要说明：</strong></p>
+<ul>
+<li><strong>向量维度：</strong> 代码中假设使用 768 维的向量 (与 <code>all-mpnet-base-v2</code> 模型匹配)。如果使用不同的 Sentence Transformer 模型，需要调整 <code>dim</code> 参数。</li>
+<li><strong>索引类型和参数：</strong> Milvus 中使用了 <code>IVF_FLAT</code> 索引，并设置了 <code>nlist</code> 和 <code>nprobe</code> 参数。这些参数会影响检索速度和精度，需要根据实际数据集大小和性能要求进行调整。</li>
+<li><strong>错误处理：</strong> 示例代码中省略了一些错误处理逻辑 (例如，连接失败、检索失败等)。在生产环境中，需要添加适当的错误处理机制。</li>
+<li><strong>LLM 集成：</strong> 代码中未包含 LLM 生成答案的部分。这部分需要根据选择的 LLM 模型 (例如，OpenAI GPT 系列、LLaMA 等) 和 API 进行实现。通常，需要将检索到的文档内容作为上下文，与用户查询一起输入到 LLM 中，生成最终答案。</li>
+<li><strong>数据同步</strong>: 在实际应用中，需要考虑文档数据和向量数据的实时同步，避免数据不一致。</li>
+</ul>
+<h4 id="1-4-应用程序部署-可选"><a href="#1-4-应用程序部署-可选" class="headerlink" title="1.4 应用程序部署 (可选)"></a>1.4 应用程序部署 (可选)</h4><p>如果需要将 RAG 应用程序部署为服务，可以使用 Docker 和 Docker Compose 进行容器化部署。</p>
+<p><strong>Dockerfile 示例：</strong></p>
+<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">FROM</span> python:<span class="number">3.9</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">WORKDIR</span><span class="language-bash"> /app</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">COPY</span><span class="language-bash"> requirements.txt .</span></span><br><span class="line"><span class="keyword">RUN</span><span class="language-bash"> pip install --no-cache-dir -r requirements.txt</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">COPY</span><span class="language-bash"> . .</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">CMD</span><span class="language-bash"> [<span class="string">&quot;python&quot;</span>, <span class="string">&quot;app.py&quot;</span>]</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>docker-compose.yml 示例 (包含 Elasticsearch, Milvus 和 RAG 应用程序)：</strong></p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">version:</span> <span class="string">&#x27;3.7&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="attr">services:</span></span><br><span class="line">  <span class="attr">elasticsearch:</span></span><br><span class="line">    <span class="comment"># ... (Elasticsearch 配置，参考 1.2.1) ...</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">milvus:</span></span><br><span class="line">    <span class="comment"># ... (Milvus 配置，参考 1.2.2) ...</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">rag_app:</span></span><br><span class="line">    <span class="attr">build:</span> <span class="string">.</span></span><br><span class="line">    <span class="attr">ports:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">&quot;8000:8000&quot;</span>  <span class="comment"># 假设应用程序监听 8000 端口</span></span><br><span class="line">    <span class="attr">depends_on:</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">elasticsearch</span></span><br><span class="line">      <span class="bullet">-</span> <span class="string">milvus</span></span><br><span class="line">    <span class="attr">environment:</span></span><br><span class="line">      <span class="attr">ELASTICSEARCH_HOSTS:</span> <span class="string">elasticsearch:9200</span>  <span class="comment"># 使用服务名称作为主机名</span></span><br><span class="line">      <span class="attr">MILVUS_HOST:</span> <span class="string">milvus</span></span><br><span class="line">      <span class="attr">MILVUS_PORT:</span> <span class="number">19530</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>启动服务：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker-compose up -d</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-技术栈需求分析"><a href="#2-技术栈需求分析" class="headerlink" title="2. 技术栈需求分析"></a>2. 技术栈需求分析</h3><table>
+<thead>
+<tr>
+<th>技术组件</th>
+<th>版本&#x2F;最低版本要求</th>
+<th>依赖说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>操作系统</td>
+<td>CentOS 7&#x2F;8, Ubuntu 18.04&#x2F;20.04 或其他 Linux 发行版</td>
+<td></td>
+</tr>
+<tr>
+<td>Java</td>
+<td>1.8.0-openjdk-devel</td>
+<td>Elasticsearch 依赖</td>
+</tr>
+<tr>
+<td>Python</td>
+<td>3.7+</td>
+<td></td>
+</tr>
+<tr>
+<td>Elasticsearch</td>
+<td>7.17.1 (建议) 或 7.x 系列</td>
+<td></td>
+</tr>
+<tr>
+<td>Milvus</td>
+<td>2.2.14 (建议) 或 2.x 系列</td>
+<td></td>
+</tr>
+<tr>
+<td>pymilvus</td>
+<td>2.2.14 (与 Milvus 版本匹配)</td>
+<td></td>
+</tr>
+<tr>
+<td>elasticsearch</td>
+<td>7.17.1 (与 Elasticsearch 版本匹配)</td>
+<td></td>
+</tr>
+<tr>
+<td>sentence-transformers</td>
+<td>最新版本</td>
+<td>用于文本向量化</td>
+</tr>
+<tr>
+<td>Docker (可选)</td>
+<td>最新版本</td>
+<td></td>
+</tr>
+<tr>
+<td>Docker Compose (可选)</td>
+<td>最新版本</td>
+<td></td>
+</tr>
+<tr>
+<td>LLM (可选)</td>
+<td>根据需要选择，如 OpenAI GPT 系列、LLaMA,ChatGLM等</td>
+<td>需要根据 LLM 提供的 API 进行集成</td>
+</tr>
+</tbody></table>
+<h3 id="3-机器配置建议与范围"><a href="#3-机器配置建议与范围" class="headerlink" title="3. 机器配置建议与范围"></a>3. 机器配置建议与范围</h3><table>
+<thead>
+<tr>
+<th>组件</th>
+<th>CPU 核心数</th>
+<th>内存 (GB)</th>
+<th>存储 (GB)</th>
+<th>网络带宽</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Elasticsearch</td>
+<td>4+</td>
+<td>8+</td>
+<td>SSD: 100+ (可扩展)</td>
+<td>千兆或万兆网卡</td>
+<td>Elasticsearch 对 CPU 和内存要求较高，存储空间根据文档数量和大小确定。建议使用 SSD 存储以获得更好的性能。</td>
+</tr>
+<tr>
+<td>Milvus</td>
+<td>4+</td>
+<td>16+</td>
+<td>SSD: 50+ (可扩展)</td>
+<td>千兆或万兆网卡</td>
+<td>Milvus 对内存要求较高，用于存储向量索引。存储空间根据向量数量和维度确定。建议使用 SSD 存储。</td>
+</tr>
+<tr>
+<td>RAG 应用程序</td>
+<td>2+</td>
+<td>4+</td>
+<td>50+</td>
+<td>千兆网卡</td>
+<td>应用程序的资源需求取决于并发请求量和 LLM 模型大小 (如果使用)。</td>
+</tr>
+</tbody></table>
+<p><strong>说明：</strong></p>
+<ul>
+<li>以上配置为建议范围，具体配置需要根据实际负载和性能需求进行调整。</li>
+<li>对于大规模的知识库，建议使用分布式部署 Elasticsearch 和 Milvus，以提高性能和可扩展性。</li>
+<li>如果使用 LLM，LLM 的计算资源需求通常较高，建议使用 GPU 服务器。</li>
+</ul>
+<h3 id="4-方案原理分析"><a href="#4-方案原理分析" class="headerlink" title="4. 方案原理分析"></a>4. 方案原理分析</h3><h2 id="RAG-Retrieval-Augmented-Generation-原理："><a href="#RAG-Retrieval-Augmented-Generation-原理：" class="headerlink" title="RAG (Retrieval-Augmented Generation) 原理："></a><strong>RAG (Retrieval-Augmented Generation) 原理：</strong></h2><p>好的，非常乐意为您解析 <strong>RAG (Retrieval-Augmented Generation)</strong>。 RAG 是近年来在大语言模型 (LLM) 领域非常热门和实用的技术，它极大地扩展了 LLM 的能力和应用范围。</p>
+<p>我会由浅入深，一步一步地解释 RAG 的概念、原理、优势、应用场景以及代码示例，力求让您对 RAG 有一个清晰而深入的理解。</p>
+<p><strong>1.  RAG 的定义：检索增强生成</strong></p>
+<p><strong>RAG (Retrieval-Augmented Generation) 的全称是 “检索增强生成”</strong>。  顾名思义，它是一种结合了 <strong>信息检索 (Retrieval)</strong> 和 <strong>文本生成 (Generation)</strong> 的技术。</p>
+<p><strong>RAG 的核心思想是：</strong>  <strong>在生成文本的过程中，先从外部知识库中检索出相关的信息，然后将检索到的信息融入到生成模型的输入中，从而增强生成文本的质量和信息量。</strong></p>
+<p><strong>简单来说，RAG 就是让大语言模型在生成答案之前，先“查阅资料”，然后再“组织语言”回答问题。</strong></p>
+<p><strong>2.  RAG 解决的问题：标准 LLM 的局限性</strong></p>
+<p>为了理解 RAG 的必要性，我们先来看看标准大语言模型 (例如直接使用 GPT-3&#x2F;4 等) 在某些场景下的局限性：</p>
+<ul>
+<li><strong>知识的“时效性”问题 (Knowledge Cut-off):</strong>  大多数预训练的 LLM 的知识都停留在训练数据截止的时间点。  对于训练数据之后出现的新知识、新事件，模型可能一无所知，或者给出过时的信息。  例如，询问 LLM 关于最近发生的某个新闻事件，它可能无法给出准确的回答。</li>
+<li><strong>缺乏特定领域或私有知识:</strong>  通用 LLM 在通用知识方面表现出色，但对于特定领域 (例如医学、法律、金融) 或私有数据 (例如企业内部文档、个人知识库) 的知识可能非常有限。  直接使用通用 LLM 难以处理这些特定领域或私有知识相关的任务。</li>
+<li><strong>“幻觉”问题 (Hallucination):</strong>  LLM 有时会生成一些听起来很流畅，但实际上是<strong>不真实、不准确，甚至完全捏造</strong>的信息，这就是所谓的 “幻觉” 问题。  尤其是在需要事实性知识的任务中，LLM 的幻觉问题会严重影响其可靠性。</li>
+<li><strong>缺乏可追溯性 (Lack of Traceability):</strong>  标准 LLM 生成答案的过程通常是黑箱的，我们很难知道模型生成某个答案的依据是什么，它从哪里“学到”了这个知识。  这在一些需要解释性和可信度的场景下是一个问题。</li>
+</ul>
+<p><strong>RAG 技术正是为了解决上述标准 LLM 的局限性而提出的。</strong>  通过引入外部知识检索机制，RAG 可以让 LLM：</p>
+<ul>
+<li><strong>获取最新的知识:</strong>  从实时更新的知识库中检索信息，克服知识的“时效性”问题。</li>
+<li><strong>利用特定领域或私有知识:</strong>  对接特定领域或私有的知识库，让模型能够回答相关领域的专业问题或访问企业内部数据。</li>
+<li><strong>减少 “幻觉”:</strong>  生成答案时有外部知识作为依据，可以减少模型“无中生有”的幻觉问题，提高答案的事实性和准确性。</li>
+<li><strong>提高可追溯性:</strong>  可以追溯生成答案所依据的外部知识来源，提高模型的可解释性和可信度。</li>
+</ul>
+<p><strong>3.  RAG 的核心流程和组件</strong></p>
+<p>RAG 的核心流程主要分为两个阶段：</p>
+<p><strong>阶段 1:  检索 (Retrieval)</strong></p>
+<ul>
+<li><strong>目标:</strong>  从外部知识库中检索出与用户查询 (Query) 最相关的信息片段 (Documents)。</li>
+<li><strong>关键步骤:</strong><ol>
+<li><strong>构建索引 (Indexing):</strong>  将外部知识库中的文档 (例如文本、网页、PDF 等) 进行预处理，例如分段 (chunking)，然后使用<strong>嵌入模型 (Embedding Model)</strong> (例如 Sentence-BERT, OpenAI Embeddings) 将每个文档片段转换为<strong>向量表示 (Vector Embeddings)</strong>。  将这些向量表示存储到<strong>向量数据库 (Vector Database)</strong> (例如 FAISS, Milvus, Pinecone, Weaviate) 中，并建立索引，以便快速检索。</li>
+<li><strong>查询向量化 (Query Embedding):</strong>  接收用户的查询 (例如用户提出的问题)，同样使用相同的嵌入模型将查询转换为<strong>查询向量 (Query Embedding)</strong>。</li>
+<li><strong>相似度搜索 (Similarity Search):</strong>  在向量数据库中，使用查询向量与所有文档片段的向量进行<strong>相似度搜索 (Similarity Search)</strong> (例如余弦相似度、点积)。  找到与查询向量最相似的 <strong>Top-K</strong> 个文档片段 (即相关性最高的文档片段)。</li>
+</ol>
+</li>
+<li><strong>输出:</strong>  检索到的 <strong>Top-K</strong> 个相关文档片段。</li>
+</ul>
+<p><strong>阶段 2:  增强生成 (Augmented Generation)</strong></p>
+<ul>
+<li><strong>目标:</strong>  将检索到的相关文档片段融入到 LLM 的输入中，让 LLM 基于这些信息生成更准确、更丰富的答案。</li>
+<li><strong>关键步骤:</strong><ol>
+<li><strong>构建增强的 Prompt (Augmented Prompt):</strong>  将用户的原始查询 (Query) 和检索到的相关文档片段 (Context Documents) 组合成一个新的 <strong>增强的 Prompt</strong>。  常见的组合方式包括：<ul>
+<li><p><strong>简单拼接:</strong>  将文档片段直接拼接在查询前面或后面。</p>
+</li>
+<li><p><strong>Prompt 工程:</strong>  设计更复杂的 Prompt 模板，例如：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&quot;请根据以下上下文信息回答问题：\n&quot;</span><br><span class="line">&quot;上下文信息:\n&quot;</span><br><span class="line">&quot;[文档片段 1]\n&quot;</span><br><span class="line">&quot;[文档片段 2]\n&quot;</span><br><span class="line">&quot;...\n&quot;</span><br><span class="line">&quot;[文档片段 K]\n&quot;</span><br><span class="line">&quot;问题: [用户查询]\n&quot;</span><br><span class="line">&quot;答案:&quot;</span><br></pre></td></tr></table></figure></li>
+</ul>
+</li>
+<li><strong>输入 LLM 生成 (Generation):</strong>  将构建好的 <strong>增强的 Prompt</strong> 输入到预训练的 LLM 中 (例如 GPT-3&#x2F;4, LLaMA 等)。  LLM 基于增强的 Prompt 生成答案。</li>
+</ol>
+</li>
+<li><strong>输出:</strong>  LLM 生成的 <strong>增强的答案 (Augmented Answer)</strong>。</li>
+</ul>
+<p><strong>RAG 流程图示:</strong></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">+-----------------+      +---------------------+      +----------------------+      +-------------------+</span><br><span class="line">| 用户查询 (Query) |-----&gt;| 信息检索 (Retrieval)  |-----&gt;| 增强的 Prompt        |-----&gt;| LLM 生成 (Generation)|-----&gt; 增强的答案 (Answer)</span><br><span class="line">+-----------------+      +---------------------+      +----------------------+      +-------------------+</span><br><span class="line">       |                      |                          |</span><br><span class="line">       |                      v                          |</span><br><span class="line">       |              外部知识库 (Knowledge Base)          |</span><br><span class="line">       |                (已索引的文档片段)                  |</span><br><span class="line">       +-------------------------------------------------+</span><br></pre></td></tr></table></figure>
+
+<p><strong>RAG 的核心组件:</strong></p>
+<ul>
+<li><strong>外部知识库 (Knowledge Base):</strong>  存储需要检索的文档数据，可以是文本文件、网页、数据库、知识图谱等。</li>
+<li><strong>文档索引 (Document Index):</strong>  对知识库中的文档进行索引，通常使用向量数据库和向量索引技术，以支持高效的相似度搜索。</li>
+<li><strong>嵌入模型 (Embedding Model):</strong>  用于将文档片段和查询转换为向量表示，以便进行相似度计算。</li>
+<li><strong>LLM (Large Language Model):</strong>  预训练的大语言模型，用于生成最终的答案。</li>
+<li><strong>Prompt 工程 (Prompt Engineering):</strong>  设计有效的 Prompt 模板，将检索到的信息和用户查询有效地组合起来，输入给 LLM。</li>
+</ul>
+<p><strong>4.  RAG 的优势和特点</strong></p>
+<ul>
+<li><strong>增强知识 (Knowledge Augmentation):</strong>  让 LLM 具备了访问和利用外部知识库的能力，突破了模型自身知识的限制。</li>
+<li><strong>提高事实性 (Factuality):</strong>  生成答案有外部知识作为依据，减少幻觉，提高答案的准确性和可靠性。</li>
+<li><strong>可定制化 (Customizable):</strong>  可以根据不同的应用场景，选择不同的知识库、嵌入模型和 LLM，灵活定制 RAG 系统。</li>
+<li><strong>可解释性 (Explainability):</strong>  可以追溯生成答案的知识来源，提高模型的可解释性和可信度。</li>
+<li><strong>易于更新 (Updatable):</strong>  知识库可以独立更新和维护，无需重新训练 LLM，即可让系统获取最新的知识。</li>
+<li><strong>模块化 (Modular):</strong>  RAG 系统是模块化的，检索模块和生成模块可以独立开发和优化。</li>
+</ul>
+<p><strong>5.  RAG 的不同实现方式和进阶技巧</strong></p>
+<p>RAG 的实现方式和技巧有很多，可以根据不同的需求进行选择和优化。  一些常见的 RAG 进阶技巧包括：</p>
+<ul>
+<li><strong>文档分段策略 (Document Chunking Strategies):</strong>  如何将文档分割成合适的片段 (chunk) 大小，会影响检索效果和生成质量。  常见的策略有固定大小分段、基于语义的分段等。</li>
+<li><strong>高级检索技术 (Advanced Retrieval Techniques):</strong><ul>
+<li><strong>语义搜索 (Semantic Search):</strong>  使用更先进的语义相似度计算方法，提高检索的准确性和相关性。</li>
+<li><strong>混合搜索 (Hybrid Search):</strong>  结合关键词搜索和向量搜索的优点，提高检索效果。</li>
+<li><strong>查询重写 (Query Rewriting):</strong>  对用户查询进行改写或扩展，使其更适合向量搜索。</li>
+<li><strong>多跳检索 (Multi-hop Retrieval):</strong>  对于复杂问题，可能需要多次检索，逐步获取相关信息。</li>
+<li><strong>检索结果重排序 (Re-ranking):</strong>  对检索到的文档片段进行重排序，选择更重要的信息。</li>
+</ul>
+</li>
+<li><strong>增强生成策略 (Augmented Generation Strategies):</strong><ul>
+<li><strong>Prompt 工程优化:</strong>  设计更有效的 Prompt 模板，更好地引导 LLM 利用检索到的信息。</li>
+<li><strong>答案抽取 (Answer Extraction):</strong>  从检索到的文档片段中直接抽取答案，而不是完全依赖 LLM 生成。</li>
+<li><strong>生成过程控制 (Generation Control):</strong>  控制 LLM 的生成过程，例如使用约束解码 (Constrained Decoding) 或引导生成 (Guided Generation) 技术，确保生成答案符合特定的要求。</li>
+<li><strong>多文档融合 (Multi-document Fusion):</strong>  如何有效地融合来自多个文档片段的信息，生成连贯和一致的答案。</li>
+</ul>
+</li>
+<li><strong>RAG 系统的评估 (RAG Evaluation):</strong>  如何评估 RAG 系统的性能，例如检索质量、生成质量、答案的事实性、相关性、流畅性等。  常用的评估指标包括 Recall, Precision, F1, BLEU, ROUGE, 答案相关性评估指标等。</li>
+</ul>
+<p><strong>6.  RAG 的应用场景</strong></p>
+<p>RAG 技术在各种需要利用外部知识的场景下都有广泛的应用：</p>
+<ul>
+<li><strong>问答系统和聊天机器人 (Question Answering and Chatbots):</strong><ul>
+<li><strong>知识密集型问答:</strong>  例如针对百科知识、产品文档、法律法规等知识库的问答。</li>
+<li><strong>企业内部知识库问答:</strong>  让员工快速获取企业内部文档、知识库中的信息。</li>
+<li><strong>客服聊天机器人:</strong>  基于产品手册、FAQ 文档等知识库回答用户咨询。</li>
+<li><strong>研究助手:</strong>  帮助研究人员快速检索和总结学术文献。</li>
+</ul>
+</li>
+<li><strong>内容创作和生成 (Content Creation and Generation):</strong><ul>
+<li><strong>信息丰富的文章生成:</strong>  例如基于维基百科、新闻报道等知识库生成文章。</li>
+<li><strong>产品描述生成:</strong>  基于产品信息数据库生成产品描述。</li>
+<li><strong>报告生成:</strong>  基于行业报告、数据分析报告等生成报告。</li>
+</ul>
+</li>
+<li><strong>搜索引擎和知识检索 (Search Engines and Knowledge Retrieval):</strong><ul>
+<li><strong>语义搜索引擎:</strong>  提供更精准、更智能的搜索结果，不仅仅基于关键词匹配，而是基于语义理解。</li>
+<li><strong>垂直领域搜索引擎:</strong>  例如医学搜索引擎、法律搜索引擎等。</li>
+<li><strong>知识图谱问答:</strong>  结合知识图谱和 RAG 技术，实现更深入的知识问答。</li>
+</ul>
+</li>
+<li><strong>教育和学习 (Education and Learning):</strong><ul>
+<li><strong>智能辅导系统:</strong>  基于教材、题库等知识库为学生提供个性化辅导。</li>
+<li><strong>在线学习平台:</strong>  提供课程内容检索、答疑解惑等功能。</li>
+</ul>
+</li>
+<li><strong>其他领域:</strong>  金融分析、法律咨询、医学诊断辅助、新闻摘要、智能推荐等。</li>
+</ul>
+<p><strong>7.  RAG 代码示例 (Python with LangChain - 概念演示)</strong></p>
+<p>以下是一个使用 Python 库 <code>LangChain</code> 演示 RAG 基本流程的简化代码示例 (仅为概念演示，可能需要根据实际情况调整):</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> langchain.embeddings.openai <span class="keyword">import</span> OpenAIEmbeddings</span><br><span class="line"><span class="keyword">from</span> langchain.vectorstores <span class="keyword">import</span> FAISS</span><br><span class="line"><span class="keyword">from</span> langchain.text_splitter <span class="keyword">import</span> RecursiveCharacterTextSplitter</span><br><span class="line"><span class="keyword">from</span> langchain.llms <span class="keyword">import</span> OpenAI</span><br><span class="line"><span class="keyword">from</span> langchain.chains <span class="keyword">import</span> RetrievalQA</span><br><span class="line"></span><br><span class="line"><span class="comment"># 1. 准备知识库文档 (示例)</span></span><br><span class="line">documents = [</span><br><span class="line">    <span class="string">&quot;LangChain is a framework for developing applications powered by language models.&quot;</span>,</span><br><span class="line">    <span class="string">&quot;RAG (Retrieval-Augmented Generation) combines retrieval and generation for enhanced LLMs.&quot;</span>,</span><br><span class="line">    <span class="string">&quot;Vector databases like FAISS are used for efficient similarity search.&quot;</span></span><br><span class="line">]</span><br><span class="line"></span><br><span class="line"><span class="comment"># 2. 文档分段 (Chunking)</span></span><br><span class="line">text_splitter = RecursiveCharacterTextSplitter(chunk_size=<span class="number">100</span>, chunk_overlap=<span class="number">0</span>)</span><br><span class="line">texts = text_splitter.create_documents(documents)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 3. 创建 OpenAI 嵌入模型</span></span><br><span class="line">embeddings = OpenAIEmbeddings()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 4. 构建向量数据库索引 (FAISS)</span></span><br><span class="line">db = FAISS.from_documents(texts, embeddings)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 5. 创建 OpenAI LLM 模型</span></span><br><span class="line">llm = OpenAI()</span><br><span class="line"></span><br><span class="line"><span class="comment"># 6. 创建 RetrievalQA 链 (RAG 链)</span></span><br><span class="line">qa_chain = RetrievalQA.from_chain_type(</span><br><span class="line">    llm=llm,</span><br><span class="line">    retriever=db.as_retriever() <span class="comment"># 使用 FAISS 向量数据库作为检索器</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 7. 用户查询</span></span><br><span class="line">query = <span class="string">&quot;What is Retrieval-Augmented Generation?&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 8. 执行 RAG 查询</span></span><br><span class="line">result = qa_chain(&#123;<span class="string">&quot;query&quot;</span>: query&#125;)</span><br><span class="line"></span><br><span class="line"><span class="comment"># 9. 输出结果</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;Question:&quot;</span>, query)</span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;Answer:&quot;</span>, result[<span class="string">&quot;result&quot;</span>]) <span class="comment"># LLM 生成的增强答案</span></span><br><span class="line"><span class="built_in">print</span>(<span class="string">&quot;Source Documents:&quot;</span>)</span><br><span class="line"><span class="keyword">for</span> doc <span class="keyword">in</span> result[<span class="string">&quot;source_documents&quot;</span>]: <span class="comment"># 检索到的源文档片段</span></span><br><span class="line">    <span class="built_in">print</span>(doc.page_content)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">&quot;-&quot;</span> * <span class="number">20</span>)</span><br></pre></td></tr></table></figure>
+
+<p><strong>代码说明:</strong></p>
+<ul>
+<li>这个示例使用了 <code>LangChain</code> 库，这是一个流行的用于构建 LLM 应用的框架，简化了 RAG 的实现。</li>
+<li><strong>步骤 1-4:</strong>  构建向量数据库索引。  使用 <code>OpenAIEmbeddings</code> 将文档片段向量化，并使用 <code>FAISS</code> 创建向量数据库索引。</li>
+<li><strong>步骤 5:</strong>  创建 <code>OpenAI</code> LLM 模型 (需要配置 OpenAI API Key)。</li>
+<li><strong>步骤 6:</strong>  使用 <code>RetrievalQA.from_chain_type</code> 创建 RAG 链，将 LLM 和向量数据库检索器连接起来。</li>
+<li><strong>步骤 7-9:</strong>  执行 RAG 查询。  输入用户查询，RAG 链会自动进行检索和生成，输出增强的答案和检索到的源文档片段。</li>
+</ul>
+<p><strong>要运行此代码:</strong></p>
+<ol>
+<li>确保已安装 <code>langchain</code>, <code>openai</code>, <code>faiss-cpu</code> 等库:  <code>pip install langchain openai faiss-cpu</code></li>
+<li>需要配置 OpenAI API Key，并设置环境变量 <code>OPENAI_API_KEY</code>。</li>
+<li>将代码复制到 Python 环境中运行。</li>
+</ol>
+<p>RAG (Retrieval-Augmented Generation) 是一种强大的技术，它通过结合信息检索和文本生成，显著提升了大语言模型的能力，使其能够更好地利用外部知识，生成更准确、更可靠、更丰富的文本。  RAG 在问答系统、聊天机器人、内容创作等领域都有广泛的应用前景，是构建下一代智能应用的关键技术之一。</p>
+<p>希望这份详细的解析能够帮助您深入理解 RAG 技术。 如果您还有其他问题，欢迎随时提出！</p>
+<h2 id="Elasticsearch-和-Milvus-在-RAG-架构中的角色："><a href="#Elasticsearch-和-Milvus-在-RAG-架构中的角色：" class="headerlink" title="Elasticsearch 和 Milvus 在 RAG 架构中的角色："></a><strong>Elasticsearch 和 Milvus 在 RAG 架构中的角色：</strong></h2><ul>
+<li><strong>Elasticsearch:</strong> 存储运维知识文档的元数据 (标题、内容、标签等)，并提供基于关键词的快速检索功能。</li>
+<li><strong>Milvus:</strong> 存储文档的向量表示 (embeddings)，并提供高效的向量相似度检索功能。</li>
+</ul>
+<p><strong>数据流：</strong></p>
+<ol>
+<li><strong>数据准备：</strong> 运维知识文档被处理成结构化数据 (如 JSON 格式)，并提取文本内容。</li>
+<li><strong>文档索引：</strong><ul>
+<li>文档元数据被索引到 Elasticsearch 中。</li>
+<li>文档文本内容使用 Sentence Transformer 模型转换为向量表示，并存储到 Milvus 中。</li>
+</ul>
+</li>
+<li><strong>用户查询：</strong> 用户输入查询 (自然语言)。</li>
+<li><strong>检索：</strong><ul>
+<li>用户查询被转换为向量表示。</li>
+<li>Milvus 根据向量相似度检索最相关的文档向量。</li>
+<li>根据 Milvus 返回的文档 ID，从 Elasticsearch 中检索文档元数据。</li>
+</ul>
+</li>
+<li><strong>生成 (可选)：</strong> 检索到的文档内容和用户查询被输入到 LLM 中，生成最终答案。</li>
+</ol>
+<p><strong>关键技术点：</strong></p>
+<ul>
+<li><strong>Sentence Embeddings:</strong> 使用 Sentence Transformer 模型将文本转换为向量表示，能够捕捉文本的语义信息。</li>
+<li><strong>向量相似度检索：</strong> Milvus 提供高效的向量相似度检索，支持多种距离度量 (如欧氏距离、余弦相似度)。</li>
+<li><strong>关键词检索：</strong> Elasticsearch 提供基于关键词的快速检索，可以作为向量检索的补充或过滤条件。</li>
+<li><strong>LLM 集成：</strong> (可选) 使用 LLM 生成更自然、更准确的答案。</li>
+</ul>
+<h3 id="5-方案优点分析"><a href="#5-方案优点分析" class="headerlink" title="5. 方案优点分析"></a>5. 方案优点分析</h3><ul>
+<li><strong>检索效果好：</strong> 结合了关键词检索和语义检索的优势，能够更准确地找到相关文档。</li>
+<li><strong>性能高：</strong> Elasticsearch 和 Milvus 都针对检索进行了优化，能够快速响应用户查询。</li>
+<li><strong>可扩展性好：</strong> Elasticsearch 和 Milvus 都支持分布式部署，可以水平扩展以应对大规模数据。</li>
+<li><strong>灵活性强：</strong> 可以根据需要选择不同的 Sentence Transformer 模型和 LLM 模型。</li>
+<li><strong>支持语义理解：</strong> 基于向量的检索能够理解用户查询的语义，而不仅仅是关键词匹配。</li>
+</ul>
+<h3 id="6-方案缺点分析"><a href="#6-方案缺点分析" class="headerlink" title="6. 方案缺点分析"></a>6. 方案缺点分析</h3><ul>
+<li><strong>复杂性较高：</strong> 需要部署和维护多个组件 (Elasticsearch, Milvus, RAG 应用程序)，增加了系统的复杂性。</li>
+<li><strong>资源消耗：</strong> Elasticsearch 和 Milvus 都需要一定的计算和存储资源，特别是 Milvus 对内存的需求较高。</li>
+<li><strong>数据同步：</strong> 需要确保 Elasticsearch 和 Milvus 中的数据同步，避免数据不一致。</li>
+<li><strong>技术栈要求：</strong> 需要熟悉 Elasticsearch、Milvus、Sentence Transformer、Python 等技术。</li>
+<li><strong>冷启动问题</strong>: 需要预先加载和索引数据，对于新加入的文档，需要重新计算向量并更新索引。</li>
+</ul>
+<h3 id="7-应用场景分析"><a href="#7-应用场景分析" class="headerlink" title="7. 应用场景分析"></a>7. 应用场景分析</h3><p><strong>适用场景：</strong></p>
+<ul>
+<li><strong>大规模运维知识库：</strong> 适用于需要存储和检索大量运维文档的场景，例如 IT 运维、设备维护、故障排除等。</li>
+<li><strong>需要语义理解的问答系统：</strong> 能够理解用户查询的语义，提供更准确的答案。</li>
+<li><strong>需要结合关键词和语义检索的场景：</strong> 可以同时利用关键词检索和语义检索的优势。</li>
+<li><strong>对性能和可扩展性有要求的场景：</strong> Elasticsearch 和 Milvus 都支持分布式部署，可以满足高性能和可扩展性的需求。</li>
+</ul>
+<p><strong>不适用场景：</strong></p>
+<ul>
+<li><strong>实时性要求极高的场景：</strong> RAG 架构的检索和生成过程需要一定的时间，不适合实时性要求极高的场景。</li>
+<li><strong>数据量非常小的场景：</strong> 对于数据量非常小的场景，可能不需要使用 RAG 架构，简单的关键词检索即可满足需求。</li>
+<li><strong>成本极其敏感的场景：</strong> Elasticsearch 和 Milvus 的部署和维护需要一定的成本，对于成本极其敏感的场景可能不适用。</li>
+<li><strong>无向量化模型或算力不足的场景</strong>：向量化计算需要合适的模型和算力支持。</li>
+</ul>
+<h1 id="RAG的关键点在哪里？"><a href="#RAG的关键点在哪里？" class="headerlink" title="RAG的关键点在哪里？"></a>RAG的关键点在哪里？</h1><p>RAG（Retrieval-Augmented Generation）的关键在于它成功地融合了信息检索（Retrieval）和文本生成（Generation）这两个方面的优势，从而克服了传统方法各自的局限性。更具体地说，RAG的关键点可以总结为以下几个方面：</p>
+<ol>
+<li><p><strong>结合检索与生成：</strong> 这是RAG最核心的思想。传统的生成模型（如GPT系列）虽然能生成流畅的文本，但容易产生“幻觉”（hallucination），即生成的内容可能不真实、不准确或与事实不符。而传统的检索系统虽然能返回相关信息，但无法生成流畅、自然的答案。RAG通过先检索相关信息，再基于检索结果进行生成，既保证了答案的准确性，又保证了答案的流畅性。</p>
+</li>
+<li><p><strong>向量表示（Embeddings）：</strong> RAG 架构通常依赖于向量数据库（如 Milvus）和预训练的语言模型（如 Sentence Transformers）。</p>
+<ul>
+<li><strong>向量数据库：</strong> 用于存储文档的向量表示，并提供高效的向量相似度检索。</li>
+<li><strong>预训练语言模型：</strong> 将文本（无论是文档还是用户查询）转换为向量表示，这些向量能够捕捉文本的语义信息。通过计算向量之间的相似度（如余弦相似度），可以找到语义上相关的文档。</li>
+</ul>
+</li>
+<li><p><strong>检索的准确性与覆盖率：</strong> RAG的效果很大程度上取决于检索到的文档的质量。</p>
+<ul>
+<li><strong>准确性：</strong> 检索到的文档需要与用户查询高度相关。这要求向量表示能够准确捕捉语义信息，向量数据库的索引和搜索算法能够高效地找到最相关的文档。</li>
+<li><strong>覆盖率：</strong> 检索到的文档需要尽可能全面地覆盖与用户查询相关的信息。这要求文档库足够大，且包含足够多样的信息。</li>
+</ul>
+</li>
+<li><p><strong>生成模型的选择与微调：</strong> RAG通常使用大型语言模型（LLM）作为生成器。</p>
+<ul>
+<li><strong>模型选择：</strong> 不同的LLM有不同的特点和优势。需要根据具体应用场景选择合适的LLM。</li>
+<li><strong>微调（Fine-tuning）：</strong> 可以使用特定领域的数据对LLM进行微调，使其更适应特定任务。</li>
+</ul>
+</li>
+<li><p><strong>检索与生成的融合方式：</strong> RAG模型如何将检索到的信息与生成模型结合，也是一个关键点。</p>
+<ul>
+<li><strong>早期融合：</strong> 将检索到的文档与用户查询一起输入到生成模型中。</li>
+<li><strong>后期融合：</strong> 先让生成模型独立生成答案，再将检索到的文档作为补充信息。</li>
+<li><strong>迭代融合：</strong> 多次迭代检索和生成过程，不断优化答案。</li>
+</ul>
+</li>
+<li><p><strong>Prompt Engineering:</strong> 如何构造输入给 LLM 的 prompt 非常关键。一个好的 prompt 可以引导 LLM 生成更符合要求的答案。在 RAG 中，prompt 通常包含用户查询和检索到的文档内容。</p>
+</li>
+<li><p><strong>可解释性与可控性:</strong> RAG 相比单纯的生成模型，具有更好的可解释性，因为可以追踪答案的来源（检索到的文档）。 这也带来了一定程度的可控性，可以通过调整检索策略或文档库来影响生成的结果。</p>
+</li>
+</ol>
+<p>总结起来，RAG 的关键在于：<strong>高质量的向量表示、高效的向量检索、强大的生成模型、以及检索与生成的有效融合</strong>。这些关键点共同作用，使得 RAG 能够在各种任务中取得优秀的性能。</p>
+<h1 id="Embedding模型的影响"><a href="#Embedding模型的影响" class="headerlink" title="Embedding模型的影响"></a>Embedding模型的影响</h1><p>Embedding 模型是影响 RAG 准确率的核心因素之一。选择合适的 Embedding 模型对于构建高效的 RAG 系统至关重要。以下是一些选择 Embedding 模型时需要考虑的关键因素和步骤：</p>
+<p><strong>1. 明确任务需求和数据集特点：</strong></p>
+<ul>
+<li><strong>任务类型：</strong> 不同的 NLP 任务（如文本分类、问答、信息检索、语义相似度计算等）可能需要不同类型的 Embedding 模型。</li>
+<li><strong>领域：</strong> 您的数据集是通用领域的（如新闻、维基百科）还是特定领域的（如医学、法律、金融）？特定领域的模型可能在特定领域的数据上表现更好。</li>
+<li><strong>语言：</strong> 您的数据集是哪种语言？有些模型是多语言的，有些模型只支持特定语言。</li>
+<li><strong>文本长度：</strong> 您的文本是短文本（如句子、标题）还是长文本（如段落、文章）？不同的模型对文本长度的处理能力不同。</li>
+<li><strong>数据集规模：</strong> 您的数据集有多大？较大的数据集可能允许您训练或微调更大的模型。</li>
+</ul>
+<p><strong>2. 考虑模型的性能指标：</strong></p>
+<ul>
+<li><strong>准确率&#x2F;召回率&#x2F;F1 分数：</strong> 对于分类任务，这些是常用的评估指标。</li>
+<li><strong>MRR (Mean Reciprocal Rank) &#x2F; NDCG (Normalized Discounted Cumulative Gain)：</strong> 对于信息检索任务，这些是常用的评估指标。</li>
+<li><strong>相关性&#x2F;一致性：</strong> 对于语义相似度计算任务，可以使用人工评估或相关性数据集来评估。</li>
+<li><strong>推理速度：</strong> 模型生成 Embedding 的速度有多快？这对于实时应用很重要。</li>
+<li><strong>资源消耗：</strong> 模型需要多少内存和计算资源？这对于部署环境有限制的情况下很重要。</li>
+</ul>
+<p><strong>3. 了解可用的 Embedding 模型类型：</strong></p>
+<ul>
+<li><p><strong>Word Embeddings (如 Word2Vec, GloVe, FastText)：</strong> 这些模型将单词映射到向量。它们通常用于捕捉单词级别的语义信息。</p>
+<ul>
+<li><strong>优点：</strong> 训练速度快，资源消耗较低。</li>
+<li><strong>缺点：</strong> 无法处理未登录词（OOV），无法捕捉上下文信息。</li>
+</ul>
+</li>
+<li><p><strong>Sentence Embeddings (如 Sentence-BERT, Universal Sentence Encoder)：</strong> 这些模型将整个句子或段落映射到向量。</p>
+<ul>
+<li><strong>优点：</strong> 能够捕捉上下文信息，能够处理未登录词，更适合句子级别的语义相似度计算。</li>
+<li><strong>缺点：</strong> 训练速度较慢，资源消耗较高。</li>
+</ul>
+</li>
+<li><p><strong>Transformer-based Models (如 BERT, RoBERTa, ELECTRA)：</strong> 这些模型基于 Transformer 架构，能够捕捉更复杂的语义信息。</p>
+<ul>
+<li>可以提取句子特征, 也可以提取单词特征</li>
+<li><strong>优点：</strong> 性能通常更好，能够捕捉更长距离的依赖关系。</li>
+<li><strong>缺点：</strong> 训练速度更慢，资源消耗更高。</li>
+</ul>
+</li>
+</ul>
+<p><strong>4. 评估和比较不同的模型：</strong></p>
+<ul>
+<li><strong>使用公开的基准数据集：</strong> 在类似您的任务的公开基准数据集上评估不同模型的性能。例如：<ul>
+<li><strong>SQuAD:</strong> 问答数据集。</li>
+<li><strong>GLUE:</strong> 自然语言理解数据集。</li>
+<li><strong>STS Benchmark:</strong> 语义文本相似度数据集。</li>
+<li><strong>MTEB (Massive Text Embedding Benchmark)</strong>: 包含多种任务和多种语言的数据集。</li>
+</ul>
+</li>
+<li><strong>在您的数据集上进行实验：</strong> 使用您的数据集对不同模型进行微调或评估，选择在您的数据集上表现最好的模型。</li>
+<li><strong>考虑模型的预训练数据：</strong> 了解模型是在什么数据上预训练的。如果模型的预训练数据与您的数据集领域相似，则模型可能表现更好。</li>
+<li><strong>考虑社区的经验和推荐：</strong> 许多研究者和开发者会在博客、论坛、论文中分享他们使用不同 Embedding 模型的经验。</li>
+</ul>
+<p><strong>5. 其他考虑因素：</strong></p>
+<ul>
+<li><strong>可解释性：</strong> 如果您需要理解模型为什么做出某个预测，可以选择具有更好可解释性的模型。</li>
+<li><strong>可维护性：</strong> 选择易于部署和维护的模型。</li>
+<li><strong>社区支持：</strong> 选择有活跃社区支持的模型，以便在遇到问题时获得帮助。</li>
+</ul>
+<p><strong>具体模型推荐（一些例子）：</strong></p>
+<ul>
+<li><strong>通用领域：</strong><ul>
+<li><strong>Sentence-BERT (all-mpnet-base-v2, all-MiniLM-L6-v2)：</strong> 在许多任务上表现良好，是一个不错的通用选择。</li>
+<li><strong>Universal Sentence Encoder (USE)：</strong> 由 Google 开发，在多种语言上表现良好。</li>
+</ul>
+</li>
+<li><strong>特定领域：</strong><ul>
+<li><strong>BioBERT:</strong> 在生物医学领域表现良好。</li>
+<li><strong>FinBERT:</strong> 在金融领域表现良好。</li>
+<li><strong>Legal-BERT:</strong> 在法律领域表现良好.</li>
+</ul>
+</li>
+</ul>
+<p>选择 Embedding 模型没有一刀切的解决方案。您需要根据您的具体任务需求、数据集特点和资源限制，进行综合考虑和实验，才能选择最合适的模型。 可以先从一些通用的、性能较好的模型开始尝试，然后根据需要进行调整。</p>
+<h2 id="Embedding模型的比对（参考）"><a href="#Embedding模型的比对（参考）" class="headerlink" title="Embedding模型的比对（参考）"></a>Embedding模型的比对（参考）</h2><p>下面是对一些常用的 Embedding 模型进行更全面的优缺点对比，涵盖了 Word Embeddings、Sentence Embeddings 和 Transformer-based Models，以及一些特定领域的模型。</p>
+<p><strong>1. Word Embeddings:</strong></p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>优点</th>
+<th>缺点</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Word2Vec</td>
+<td>训练速度快，资源消耗低；能够捕捉单词之间的语义关系（如同义词、反义词）；有大量的预训练模型可用。</td>
+<td>无法处理未登录词（OOV）；无法捕捉上下文信息（一词多义）；忽略了词序。</td>
+<td>单词级别的语义分析；词汇相似度计算；作为其他模型的输入特征。</td>
+</tr>
+<tr>
+<td>GloVe</td>
+<td>与 Word2Vec 类似，但训练目标不同（基于全局词共现矩阵）；在某些任务上可能比 Word2Vec 略好。</td>
+<td>与 Word2Vec 类似。</td>
+<td>与 Word2Vec 类似。</td>
+</tr>
+<tr>
+<td>FastText</td>
+<td>与 Word2Vec 类似，但考虑了字符级别的 n-gram 信息；能够处理未登录词；对于形态丰富的语言（如德语、俄语）效果更好。</td>
+<td>训练速度比 Word2Vec 慢；模型大小比 Word2Vec 大。</td>
+<td>词形变化丰富的语言；处理包含未登录词的文本；文本分类。</td>
+</tr>
+</tbody></table>
+<p><strong>2. Sentence Embeddings:</strong></p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>优点</th>
+<th>缺点</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Sentence-BERT (SBERT)</td>
+<td>能够捕捉句子级别的语义信息；在语义相似度任务上表现出色；有多种预训练模型可用（针对不同任务和语言）；可以使用不同的 Pooling 策略（如 CLS, MEAN, MAX）。</td>
+<td>训练速度比 Word Embeddings 慢；资源消耗较高。</td>
+<td>句子级别的语义相似度计算；文本聚类；信息检索；问答系统。</td>
+</tr>
+<tr>
+<td>Universal Sentence Encoder (USE)</td>
+<td>由 Google 开发；支持多种语言；有两种版本：基于 Transformer 的版本和基于 DAN (Deep Averaging Network) 的版本；DAN 版本速度更快，资源消耗更低；Transformer 版本精度更高。</td>
+<td>DAN 版本在某些任务上可能不如 Transformer 版本准确；Transformer 版本资源消耗较高。</td>
+<td>多语言文本相似度计算；文本分类；问答系统。</td>
+</tr>
+<tr>
+<td>InferSent</td>
+<td>由 Facebook 开发；基于 BiLSTM 架构；在一些自然语言推理任务上表现良好。</td>
+<td>训练速度较慢；资源消耗较高；在某些任务上可能不如 Sentence-BERT。</td>
+<td>自然语言推理；文本蕴含；句子关系判断。</td>
+</tr>
+</tbody></table>
+<p><strong>3. Transformer-based Models:</strong></p>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>优点</th>
+<th>缺点</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>BERT</td>
+<td>基于 Transformer 架构；能够捕捉深层次的语义信息；在多种 NLP 任务上取得了 SOTA 结果；有多种预训练模型可用（针对不同任务和语言）；可以进行微调。</td>
+<td>训练速度慢；资源消耗高；对长文本的处理能力有限。</td>
+<td>几乎所有 NLP 任务：文本分类、问答、命名实体识别、情感分析等。</td>
+</tr>
+<tr>
+<td>RoBERTa</td>
+<td>BERT 的改进版；使用了更大的训练数据和更长的训练时间；在一些任务上比 BERT 更好。</td>
+<td>与 BERT 类似。</td>
+<td>与 BERT 类似。</td>
+</tr>
+<tr>
+<td>ELECTRA</td>
+<td>使用了更高效的预训练方法（替换 Token 检测）；在相同计算资源下，性能通常比 BERT 更好。</td>
+<td>与 BERT 类似。</td>
+<td>与 BERT 类似。</td>
+</tr>
+<tr>
+<td>ALBERT</td>
+<td>BERT 的轻量级版本；使用了参数共享和矩阵分解等技术来减少模型大小和提高训练速度；在保持性能的同时，降低了资源消耗。</td>
+<td>在某些任务上可能不如 BERT 或 RoBERTa。</td>
+<td>对资源有限制的场景；需要快速训练或部署的场景。</td>
+</tr>
+<tr>
+<td>DistilBERT</td>
+<td>BERT 的蒸馏版本；模型更小，速度更快，同时保留了 BERT 的大部分性能。</td>
+<td>性能略低于 BERT。</td>
+<td>对资源有限制的场景；需要快速推理的场景。</td>
+</tr>
+<tr>
+<td>XLNet</td>
+<td>基于自回归的预训练方法；能够捕捉双向上下文信息；在一些任务上比 BERT 更好。</td>
+<td>训练速度慢；资源消耗高。</td>
+<td>需要捕捉长距离依赖关系的任务；生成任务。</td>
+</tr>
+<tr>
+<td>T5 (Text-to-Text Transfer Transformer)</td>
+<td>将所有 NLP 任务都转化为文本生成任务；可以使用相同的模型和训练流程处理多种任务；在一些任务上取得了 SOTA 结果。</td>
+<td>模型较大；资源消耗高。</td>
+<td>需要处理多种 NLP 任务的场景；生成任务。</td>
+</tr>
+<tr>
+<td>MPNet</td>
+<td>结合了 BERT 和 XLNet 的优点, 通过排列语言建模（Permutation Language Modeling）进行预训练, 提升效果和性能.</td>
+<td>模型相对较大, 资源消耗高.</td>
+<td>适用于广泛的自然语言处理任务，尤其是在需要良好平衡准确性和效率的情况下.</td>
+</tr>
+<tr>
+<td><strong>4. 特定领域模型:</strong></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>模型</th>
+<th>领域</th>
+<th>优点</th>
+<th>缺点</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>BioBERT</td>
+<td>生物医学</td>
+<td>在生物医学领域 NLP 任务上表现出色；能够捕捉领域特定的语义信息。</td>
+<td>仅适用于生物医学领域。</td>
+<td>生物医学文本挖掘；问答。</td>
+</tr>
+<tr>
+<td>FinBERT</td>
+<td>金融</td>
+<td>在金融领域 NLP 任务上表现出色。</td>
+<td>仅适用于金融领域。</td>
+<td>金融文本分析；情感分析。</td>
+</tr>
+<tr>
+<td>Legal-BERT</td>
+<td>法律</td>
+<td>在法律领域 NLP 任务上表现出色。</td>
+<td>仅适用于法律领域。</td>
+<td>法律文本分析；合同审查。</td>
+</tr>
+<tr>
+<td>SciBERT</td>
+<td>科学</td>
+<td>在科学文献 NLP 任务上表现出色。</td>
+<td>仅适用于科学文献领域.</td>
+<td>科学文献分析；问答.</td>
+</tr>
+</tbody></table>
+<p><strong>总结:</strong></p>
+<ul>
+<li><strong>如果资源有限，或者需要快速原型验证：</strong> 可以考虑 Word2Vec, GloVe, FastText, 或 DistilBERT。</li>
+<li><strong>如果需要捕捉句子级别的语义信息：</strong> 可以考虑 Sentence-BERT 或 Universal Sentence Encoder。</li>
+<li><strong>如果需要最好的性能：</strong> 可以考虑 BERT, RoBERTa, ELECTRA, XLNet, T5 或 MPNet，并根据具体任务进行微调。</li>
+<li><strong>如果处理特定领域的文本：</strong> 可以考虑使用领域特定的模型（如 BioBERT, FinBERT, Legal-BERT）。</li>
+</ul>
+<p>请注意，这只是一个大致的对比，实际选择时还需要结合您的具体情况进行实验和评估。 建议从 huggingface models 库中搜索 “sentence-transformers” 标签，可以找到大量可直接使用的预训练 Sentence Transformer 模型, 并且附有详细的性能指标, 可以帮助你进行选择.</p>
+<p><strong>免责声明</strong></p>
+<p>本报告（“基于 Elasticsearch 和 Milvus 的 RAG 运维知识库(包含详尽的技术实现细节、可运行的示例代码、Embedding的参考比对）”）由[ViniJack.SJX] 根据公开可获得的信息以及作者的专业知识和经验撰写，旨在提供关于原理、技术、相关框架和工具的分析和信息。</p>
+<p><strong>1. 信息准确性与完整性：</strong></p>
+<ul>
+<li><p>作者已尽最大努力确保报告中信息的准确性和完整性，但不对其绝对准确性、完整性或及时性做出任何明示或暗示的保证。</p>
+</li>
+<li><p>报告中的信息可能随时间推移而发生变化，作者不承担更新报告内容的义务。</p>
+</li>
+<li><p>报告中引用的第三方信息（包括但不限于网站链接、项目描述、数据统计等）均来自公开渠道，作者不对其真实性、准确性或合法性负责。</p>
+</li>
+</ul>
+<p><strong>2. 报告用途与责任限制：</strong></p>
+<ul>
+<li><p>本报告仅供参考和学习之用，不构成任何形式的投资建议、技术建议、法律建议或其他专业建议。</p>
+</li>
+<li><p>读者应自行判断和评估报告中的信息，并根据自身情况做出决策。</p>
+</li>
+<li><p>对于因使用或依赖本报告中的信息而导致的任何直接或间接损失、损害或不利后果，作者不承担任何责任。</p>
+</li>
+</ul>
+<p><strong>3. 技术使用与合规性：</strong></p>
+<ul>
+<li><p>本报告中提及的任何爬虫框架、工具或技术，读者应自行负责其合法合规使用。</p>
+</li>
+<li><p>在使用任何爬虫技术时，读者应遵守相关法律法规（包括但不限于数据隐私保护法、知识产权法、网络安全法等），尊重网站的服务条款和robots协议，不得侵犯他人合法权益。</p>
+</li>
+<li><p>对于因读者违反相关法律法规或不当使用爬虫技术而导致的任何法律责任或纠纷，作者不承担任何责任。</p>
+</li>
+</ul>
+<p><strong>4. 知识产权：</strong></p>
+<ul>
+<li><p>本报告的版权归作者所有，未经作者书面许可，任何人不得以任何形式复制、传播、修改或使用本报告的全部或部分内容。</p>
+</li>
+<li><p>报告中引用的第三方内容，其知识产权归原作者所有。</p>
+</li>
+</ul>
+<p><strong>5. 其他：</strong></p>
+<ul>
+<li><p>本报告可能包含对未来趋势的预测，这些预测基于作者的判断和假设，不构成任何形式的保证。</p>
+</li>
+<li><p>作者保留随时修改本免责声明的权利。</p>
+</li>
+</ul>
+<p><strong>请在使用本报告前仔细阅读并理解本免责声明。如果您不同意本免责声明的任何条款，请勿使用本报告。</strong></p>
+</div><div class="article-licensing box"><div class="licensing-title"><p>基于 Elasticsearch 和 Milvus 的 RAG 运维知识库(包含详尽的技术实现细节、可运行的示例代码、Embedding的参考比对）</p><p><a href="http://acorner.ac.cn/2025/02/28/基于 Elasticsearch 和 Milvus 的 RAG 运维知识库(包含详尽的技术实现细节、可运行的示例代码、Embedding的参考比对）/">http://acorner.ac.cn/2025/02/28/基于 Elasticsearch 和 Milvus 的 RAG 运维知识库(包含详尽的技术实现细节、可运行的示例代码、Embedding的参考比对）/</a></p></div><div class="licensing-meta level is-mobile"><div class="level-left"><div class="level-item is-narrow"><div><h6>作者</h6><p>ViniJack.SJX</p></div></div><div class="level-item is-narrow"><div><h6>发布于</h6><p>2025-02-28</p></div></div><div class="level-item is-narrow"><div><h6>更新于</h6><p>2025-02-28</p></div></div><div class="level-item is-narrow"><div><h6>许可协议</h6><p><a class="icons" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="icon fab fa-creative-commons"></i></a><a class="icons" rel="noopener" target="_blank" title="Attribution" href="https://creativecommons.org/licenses/by/4.0/"><i class="icon fab fa-creative-commons-by"></i></a><a class="icons" rel="noopener" target="_blank" title="Noncommercial" href="https://creativecommons.org/licenses/by-nc/4.0/"><i class="icon fab fa-creative-commons-nc"></i></a></p></div></div></div></div></div><div class="article-tags is-size-7 mb-4"><span class="mr-2">#</span><a class="link-muted mr-2" rel="tag" href="/tags/LLM/">LLM</a><a class="link-muted mr-2" rel="tag" href="/tags/%E5%8E%9F%E7%90%86/">原理</a><a class="link-muted mr-2" rel="tag" href="/tags/%E5%AF%B9%E6%AF%94%E5%88%86%E6%9E%90/">对比分析</a><a class="link-muted mr-2" rel="tag" href="/tags/RAG/">RAG</a><a class="link-muted mr-2" rel="tag" href="/tags/%E9%A3%9F%E7%94%A8%E6%96%87%E6%A1%A3/">食用文档</a></div><div class="notification is-danger">You need to set <code>install_url</code> to use ShareThis. Please set it in <code>_config.yml</code>.</div></article></div><div class="card"><div class="card-content"><h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3><div class="buttons is-centered"><a class="button donate" href="https://github.com/A-Corner/a-corner.github.io" target="_blank" rel="noopener" data-type="afdian"><span class="icon is-small"><i class="fas fa-charging-station"></i></span><span>爱发电</span></a><a class="button donate" data-type="alipay"><span class="icon is-small"><i class="fab fa-alipay"></i></span><span>支付宝</span><span class="qrcode"><img src="/" alt="支付宝"></span></a><a class="button donate" href="/" target="_blank" rel="noopener" data-type="buymeacoffee"><span class="icon is-small"><i class="fas fa-coffee"></i></span><span>送我杯咖啡</span></a><a class="button donate" href="/" target="_blank" rel="noopener" data-type="patreon"><span class="icon is-small"><i class="fab fa-patreon"></i></span><span>Patreon</span></a><div class="notification is-danger">You forgot to set the <code>business</code> or <code>currency_code</code> for Paypal. Please set it in <code>_config.yml</code>.</div><a class="button donate" data-type="wechat"><span class="icon is-small"><i class="fab fa-weixin"></i></span><span>微信</span><span class="qrcode"><img src="/" alt="微信"></span></a></div></div></div><nav class="post-navigation mt-4 level is-mobile"><div class="level-start"><a class="article-nav-prev level level-item link-muted" href="/2025/02/28/Bert%E6%A8%A1%E5%9E%8B%E7%9A%84%E6%9C%AC%E8%B4%A8/"><i class="level-item fas fa-chevron-left"></i><span class="level-item">Bert模型的本质</span></a></div><div class="level-end"><a class="article-nav-next level level-item link-muted" href="/2025/02/25/%E5%A4%8D%E6%9D%82%E6%8F%90%E7%A4%BA%E5%B7%A5%E7%A8%8B%EF%BC%9AChain-of-Thought%20vs%20Tree-of-Thought%20%E8%8C%83%E5%BC%8F%E5%AF%B9%E6%AF%94/"><span class="level-item">复杂提示工程：Chain-of-Thought vs Tree-of-Thought 范式对比</span><i class="level-item fas fa-chevron-right"></i></a></div></nav><div class="card" id="comments"><div class="card-content"><h3 class="title is-5">评论</h3><div class="notification is-danger">You forgot to set the <code>shortname</code> for Disqus. Please set it in <code>_config.yml</code>.</div></div></div></div><div class="column column-left is-4-tablet is-4-desktop is-3-widescreen  order-1"><div class="card widget" data-type="profile"><div class="card-content"><nav class="level"><div class="level-item has-text-centered flex-shrink-1"><div><figure class="image is-128x128 mx-auto mb-2"><img class="avatar" src="/img/avatar.jpg" alt="A-Corner"></figure><p class="title is-size-4 is-block" style="line-height:inherit;">A-Corner</p><p class="is-size-6 is-block">信息的一角</p><p class="is-size-6 is-flex justify-content-center"><i class="fas fa-map-marker-alt mr-1"></i><span>China（Guangzhou）</span></p></div></div></nav><nav class="level is-mobile"><div class="level-item has-text-centered is-marginless"><div><p class="heading">文章</p><a href="/archives/"><p class="title">13</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">分类</p><a href="/categories/"><p class="title">18</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">标签</p><a href="/tags/"><p class="title">22</p></a></div></div></nav><div class="level"><a class="level-item button is-primary is-rounded" href="https://github.com/A-Corner/a-corner.github.io" target="_blank" rel="me noopener">关注我</a></div><div class="level is-mobile is-multiline"><a class="level-item button is-transparent is-marginless" target="_blank" rel="me noopener" title="Github" href="https://github.com/A-Corner/a-corner.github.io"><i class="fab fa-github"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="me noopener" title="Facebook" href="https://facebook.com"><i class="fab fa-facebook"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="me noopener" title="Twitter" href="https://twitter.com"><i class="fab fa-twitter"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="me noopener" title="Dribbble" href="https://dribbble.com"><i class="fab fa-dribbble"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="me noopener" title="RSS" href="/"><i class="fas fa-rss"></i></a></div></div></div><div class="card widget" data-type="links"><div class="card-content"><div class="menu"><h3 class="menu-label">链接</h3><ul class="menu-list"><li><a class="level is-mobile" href="https://hexo.io" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">Hexo</span></span><span class="level-right"><span class="level-item tag">hexo.io</span></span></a></li><li><a class="level is-mobile" href="https://bulma.io" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">Bulma</span></span><span class="level-right"><span class="level-item tag">bulma.io</span></span></a></li></ul></div></div></div><div class="card widget" data-type="subscribe-email"><div class="card-content"><div class="menu"><h3 class="menu-label">订阅更新</h3><form action="https://feedburner.google.com/fb/a/mailverify" method="post" target="popupwindow" onsubmit="window.open(&#039;https://feedburner.google.com/fb/a/mailverify?uri=&#039;,&#039;popupwindow&#039;,&#039;scrollbars=yes,width=550,height=520&#039;);return true"><input type="hidden" value="" name="uri"><input type="hidden" name="loc" value="en_US"><div class="field has-addons"><div class="control has-icons-left is-expanded"><input class="input" name="email" type="email" placeholder="Email"><span class="icon is-small is-left"><i class="fas fa-envelope"></i></span></div><div class="control"><input class="button" type="submit" value="订阅"></div></div></form></div></div></div><div class="card widget"><div class="card-content"><div class="notification is-danger">You need to set <code>client_id</code> and <code>slot_id</code> to show this AD unit. Please set it in <code>_config.yml</code>.</div></div></div><div class="card widget" data-type="subscribe-email"><div class="card-content"><div class="menu"><h3 class="menu-label">follow.it</h3><form action="" method="post" target="_blank"><div class="field has-addons"><div class="control has-icons-left is-expanded"><input class="input" name="email" type="email" placeholder="Email"><span class="icon is-small is-left"><i class="fas fa-envelope"></i></span></div><div class="control"><input class="button" type="submit" value="订阅"></div></div></form></div></div></div><div class="column-right-shadow is-hidden-widescreen"></div></div><div class="column column-right is-4-tablet is-4-desktop is-3-widescreen is-hidden-touch is-hidden-desktop-only order-3"><!--!--><div class="card widget" data-type="categories"><div class="card-content"><div class="menu"><h3 class="menu-label">分类</h3><ul class="menu-list"><li><a class="level is-mobile" href="/categories/AI/"><span class="level-start"><span class="level-item">AI</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/Bert/"><span class="level-start"><span class="level-item">Bert</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/LLM/"><span class="level-start"><span class="level-item">LLM</span></span><span class="level-end"><span class="level-item tag">9</span></span></a></li><li><a class="level is-mobile" href="/categories/Model/"><span class="level-start"><span class="level-item">Model</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/RAG/"><span class="level-start"><span class="level-item">RAG</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A/"><span class="level-start"><span class="level-item">分析报告</span></span><span class="level-end"><span class="level-item tag">4</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%8E%9F%E7%90%86/"><span class="level-start"><span class="level-item">原理</span></span><span class="level-end"><span class="level-item tag">10</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/"><span class="level-start"><span class="level-item">向量数据库</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%AF%B9%E6%AF%94%E5%88%86%E6%9E%90/"><span class="level-start"><span class="level-item">对比分析</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%B7%A5%E5%85%B7/"><span class="level-start"><span class="level-item">工具</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/"><span class="level-start"><span class="level-item">强化学习</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%BE%AE%E8%B0%83/"><span class="level-start"><span class="level-item">微调</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/%E6%8F%90%E7%A4%BA%E5%B7%A5%E7%A8%8B/"><span class="level-start"><span class="level-item">提示工程</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E6%95%B0%E5%AD%A6/"><span class="level-start"><span class="level-item">数学</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E6%A1%86%E6%9E%B6/"><span class="level-start"><span class="level-item">框架</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/"><span class="level-start"><span class="level-item">深度学习</span></span><span class="level-end"><span class="level-item tag">3</span></span></a></li><li><a class="level is-mobile" href="/categories/%E9%98%85%E8%AF%BB%E6%8A%A5%E5%91%8A/"><span class="level-start"><span class="level-item">阅读报告</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E9%A3%9F%E7%94%A8%E6%96%87%E6%A1%A3/"><span class="level-start"><span class="level-item">食用文档</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li></ul></div></div></div><div class="card widget" data-type="recent-posts"><div class="card-content"><h3 class="menu-label">最新文章</h3><article class="media"><div class="media-content"><p class="date"><time dateTime="2025-02-28T07:08:16.614Z">2025-02-28</time></p><p class="title"><a href="/2025/02/28/Bert%E6%A8%A1%E5%9E%8B%E7%9A%84%E6%9C%AC%E8%B4%A8/">Bert模型的本质</a></p><p class="categories"><a href="/categories/LLM/">LLM</a> / <a href="/categories/%E5%8E%9F%E7%90%86/">原理</a> / <a href="/categories/%E5%AF%B9%E6%AF%94%E5%88%86%E6%9E%90/">对比分析</a> / <a href="/categories/Bert/">Bert</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2025-02-28T03:24:23.907Z">2025-02-28</time></p><p class="title"><a href="/2025/02/28/%E5%9F%BA%E4%BA%8E%20Elasticsearch%20%E5%92%8C%20Milvus%20%E7%9A%84%20RAG%20%E8%BF%90%E7%BB%B4%E7%9F%A5%E8%AF%86%E5%BA%93(%E5%8C%85%E5%90%AB%E8%AF%A6%E5%B0%BD%E7%9A%84%E6%8A%80%E6%9C%AF%E5%AE%9E%E7%8E%B0%E7%BB%86%E8%8A%82%E3%80%81%E5%8F%AF%E8%BF%90%E8%A1%8C%E7%9A%84%E7%A4%BA%E4%BE%8B%E4%BB%A3%E7%A0%81%E3%80%81Embedding%E7%9A%84%E5%8F%82%E8%80%83%E6%AF%94%E5%AF%B9%EF%BC%89/">基于 Elasticsearch 和 Milvus 的 RAG 运维知识库(包含详尽的技术实现细节、可运行的示例代码、Embedding的参考比对）</a></p><p class="categories"><a href="/categories/LLM/">LLM</a> / <a href="/categories/RAG/">RAG</a> / <a href="/categories/%E5%8E%9F%E7%90%86/">原理</a> / <a href="/categories/%E5%AF%B9%E6%AF%94%E5%88%86%E6%9E%90/">对比分析</a> / <a href="/categories/%E9%A3%9F%E7%94%A8%E6%96%87%E6%A1%A3/">食用文档</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2025-02-25T05:51:16.647Z">2025-02-25</time></p><p class="title"><a href="/2025/02/25/%E5%A4%8D%E6%9D%82%E6%8F%90%E7%A4%BA%E5%B7%A5%E7%A8%8B%EF%BC%9AChain-of-Thought%20vs%20Tree-of-Thought%20%E8%8C%83%E5%BC%8F%E5%AF%B9%E6%AF%94/">复杂提示工程：Chain-of-Thought vs Tree-of-Thought 范式对比</a></p><p class="categories"><a href="/categories/LLM/">LLM</a> / <a href="/categories/%E5%8E%9F%E7%90%86/">原理</a> / <a href="/categories/%E5%AF%B9%E6%AF%94%E5%88%86%E6%9E%90/">对比分析</a> / <a href="/categories/%E6%8F%90%E7%A4%BA%E5%B7%A5%E7%A8%8B/">提示工程</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2025-02-25T03:20:54.429Z">2025-02-25</time></p><p class="title"><a href="/2025/02/25/%E4%B8%80%E7%AF%87%E2%80%9C**%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E4%B8%AD%E7%9A%84%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD**%E2%80%9D%E5%BC%95%E5%8F%91%E7%9A%84%E5%AD%A6%E4%B9%A0%E8%A1%80%E6%A1%88/">一篇“**神经网络中的反向传播**”引发的学习血案</a></p><p class="categories"><a href="/categories/LLM/">LLM</a> / <a href="/categories/%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A/">分析报告</a> / <a href="/categories/%E5%8E%9F%E7%90%86/">原理</a> / <a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a> / <a href="/categories/%E5%BE%AE%E8%B0%83/">微调</a> / <a href="/categories/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/">强化学习</a> / <a href="/categories/%E9%98%85%E8%AF%BB%E6%8A%A5%E5%91%8A/">阅读报告</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2025-02-21T03:26:59.380Z">2025-02-21</time></p><p class="title"><a href="/2025/02/21/Michael%20Luo%20....%E9%98%85%E8%AF%BB%E6%8A%A5%E5%91%8A/">关于“DeepScaleR：通过扩展强化学习，用1.5B模型超越O1-Preview”（译文）阅读报告</a></p><p class="categories"><a href="/categories/LLM/">LLM</a> / <a href="/categories/%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A/">分析报告</a> / <a href="/categories/%E5%8E%9F%E7%90%86/">原理</a> / <a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a> / <a href="/categories/%E5%BE%AE%E8%B0%83/">微调</a> / <a href="/categories/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/">强化学习</a> / <a href="/categories/%E9%98%85%E8%AF%BB%E6%8A%A5%E5%91%8A/">阅读报告</a></p></div></article></div></div><div class="card widget" data-type="archives"><div class="card-content"><div class="menu"><h3 class="menu-label">归档</h3><ul class="menu-list"><li><a class="level is-mobile" href="/archives/2025/02/"><span class="level-start"><span class="level-item">二月 2025</span></span><span class="level-end"><span class="level-item tag">13</span></span></a></li></ul></div></div></div><div class="card widget" data-type="tags"><div class="card-content"><div class="menu"><h3 class="menu-label">标签</h3><div class="field is-grouped is-grouped-multiline"><div class="control"><a class="tags has-addons" href="/tags/AI/"><span class="tag">AI</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Bert/"><span class="tag">Bert</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/LLM/"><span class="tag">LLM</span><span class="tag">9</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Model/"><span class="tag">Model</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/RAG/"><span class="tag">RAG</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%85%A5%E9%97%A8/"><span class="tag">入门</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A/"><span class="tag">分析报告</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8E%9F%E7%90%86/"><span class="tag">原理</span><span class="tag">10</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93/"><span class="tag">向量数据库</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%AF%B9%E6%AF%94%E5%88%86%E6%9E%90/"><span class="tag">对比分析</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%B7%A5%E5%85%B7/"><span class="tag">工具</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%BC%BA%E5%8C%96%E5%AD%A6%E4%B9%A0/"><span class="tag">强化学习</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%BE%AE%E8%B0%83/"><span class="tag">微调</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%8F%90%E7%A4%BA%E5%B7%A5%E7%A8%8B/"><span class="tag">提示工程</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%95%B0%E5%AD%A6/"><span class="tag">数学</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%A1%86%E6%9E%B6/"><span class="tag">框架</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%A6%82%E7%8E%87/"><span class="tag">概率</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/"><span class="tag">深度学习</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%88%AC%E8%99%AB/"><span class="tag">爬虫</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%87%AA%E5%8A%A8%E5%8C%96/"><span class="tag">自动化</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E9%98%85%E8%AF%BB%E6%8A%A5%E5%91%8A/"><span class="tag">阅读报告</span><span class="tag">2</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E9%A3%9F%E7%94%A8%E6%96%87%E6%A1%A3/"><span class="tag">食用文档</span><span class="tag">2</span></a></div></div></div></div></div></div></div></div></section><footer class="footer"><div class="container"><div class="level"><div class="level-start"><a class="footer-logo is-block mb-2" href="/"><img src="/img/%E4%B8%80%E8%A7%92logo.png" alt="A-Acorner 信息的一角" height="28"></a><p class="is-size-7"><span>&copy; 2025 ViniJack.SJX</span>  Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a> &amp; <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a></p><p class="is-size-7">© 2025 A-Corner</p></div><div class="level-end"><div class="field has-addons"><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/A-Corner/a-corner.github.io"><i class="fab fa-github"></i></a></p></div></div></div></div></footer><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script><script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script><script>moment.locale("zh-cn");</script><script>var IcarusThemeSettings = {
+            article: {
+                highlight: {
+                    clipboard: true,
+                    fold: 'unfolded'
+                }
+            }
+        };</script><script data-pjax src="/js/column.js"></script><script src="/js/animation.js"></script><a id="back-to-top" title="回到顶端" href="javascript:;"><i class="fas fa-chevron-up"></i></a><script data-pjax src="/js/back_to_top.js" defer></script><!--!--><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.js" defer></script><script>window.addEventListener("load", () => {
+      window.cookieconsent.initialise({
+        type: "info",
+        theme: "edgeless",
+        static: false,
+        position: "bottom-left",
+        content: {
+          message: "此网站使用Cookie来改善您的体验。",
+          dismiss: "知道了！",
+          allow: "允许使用Cookie",
+          deny: "拒绝",
+          link: "了解更多",
+          policy: "Cookie政策",
+          href: "https://www.cookiesandyou.com/",
+        },
+        palette: {
+          popup: {
+            background: "#edeff5",
+            text: "#838391"
+          },
+          button: {
+            background: "#4b81e8"
+          },
+        },
+      });
+    });</script><script src="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/js/lightgallery.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/js/jquery.justifiedGallery.min.js" defer></script><script>window.addEventListener("load", () => {
+            if (typeof $.fn.lightGallery === 'function') {
+                $('.article').lightGallery({ selector: '.gallery-item' });
+            }
+            if (typeof $.fn.justifiedGallery === 'function') {
+                if ($('.justified-gallery > p > .gallery-item').length) {
+                    $('.justified-gallery > p > .gallery-item').unwrap();
+                }
+                $('.justified-gallery').justifiedGallery();
+            }
+        });</script><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/pjax@0.2.8/pjax.min.js"></script><script src="/js/pjax.js"></script><!--!--><!--!--><!--!--><script data-pjax src="/js/main.js" defer></script><div class="searchbox"><div class="searchbox-container"><div class="searchbox-header"><div class="searchbox-input-container"><input class="searchbox-input" type="text" placeholder="想要查找什么..."></div><a class="searchbox-close" href="javascript:;">×</a></div><div class="searchbox-body"></div></div></div><script data-pjax src="/js/insight.js" defer></script><script data-pjax>document.addEventListener('DOMContentLoaded', function () {
+            loadInsight({"contentUrl":"/content.json"}, {"hint":"想要查找什么...","untitled":"(无标题)","posts":"文章","pages":"页面","categories":"分类","tags":"标签"});
+        });</script></body></html>
